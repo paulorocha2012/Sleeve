@@ -33,35 +33,29 @@ Detalhes e justificativas técnicas completas em
 
 ## Instruções para execução
 
-Pré-requisitos: Node.js 18+ e o app **Expo Go** no celular (ou um
-emulador Android/iOS configurado).
-
-```bash
-npm install
-npm start
-```
-
-Em seguida, escaneie o QR code exibido no terminal com o app Expo Go, ou
-pressione `a`/`i` no terminal para abrir em um emulador Android/iOS.
+Não aplicável nesta etapa. A Etapa 1 é de proposta e planejamento — ainda
+não há código-fonte no repositório. O scaffold do projeto (Expo +
+TypeScript) e as instruções de execução serão adicionados a partir da
+próxima etapa.
 
 ## Instruções para teste
 
-```bash
-npm test
-```
-
-(Etapa 1: apenas um teste placeholder validando a configuração do Jest.
-Testes de lógica de negócio e componentes chegam na etapa de "testes" — ver
-roadmap em `docs/arquitetura.md`.)
+Não aplicável nesta etapa, pelo mesmo motivo acima. Instruções de teste
+serão adicionadas quando houver código e a etapa de testes automatizados
+for implementada (ver roadmap em `docs/arquitetura.md`).
 
 ## Funcionalidades implementadas
 
-- Estrutura do projeto (Expo + TypeScript) e navegação entre as 6 telas
-  previstas (Login, Home/Feed, Buscar, Detalhe do álbum, Nova avaliação,
-  Perfil), com dados ainda estáticos/placeholder.
+Nenhuma ainda. Esta etapa entrega apenas a proposta e o planejamento do
+projeto (ver `docs/proposta.md`): nome, problema, público-alvo, telas
+previstas, fluxo de navegação, tecnologias escolhidas e estrutura de
+diretórios planejada.
 
 ## Funcionalidades previstas (próximas etapas)
 
+- Estrutura do projeto (Expo + TypeScript) e navegação entre as 6 telas
+  previstas (Login, Home/Feed, Buscar, Detalhe do álbum, Nova avaliação,
+  Perfil).
 - Persistência local das avaliações.
 - Busca real de álbuns/EPs via MusicBrainz + Cover Art Archive.
 - Autenticação e sincronização com Supabase.
@@ -72,7 +66,6 @@ Roadmap completo em [`docs/arquitetura.md`](docs/arquitetura.md#evolução-por-e
 
 ## Limitações conhecidas (Etapa 1)
 
-- Nenhuma lógica de negócio real ainda: telas exibem dados estáticos.
-- Sem autenticação, sem chamadas de API e sem persistência funcionando
-  nesta etapa — isso é esperado, dado que esta é a etapa de proposta e
-  planejamento.
+- Nenhum código-fonte ainda — o repositório contém apenas a documentação
+  desta etapa (README.md e docs/), o que é esperado, dado que esta é a
+  etapa de proposta e planejamento.

@@ -144,9 +144,9 @@ Ambas são públicas, gratuitas e não exigem chave de API.
 
 Armazenamento híbrido:
 
-- **Local** (`AsyncStorage`, via `src/services/localStorage.ts`): sessão do
-  usuário, cache de resultados de busca já consultados no MusicBrainz, e
-  rascunhos de avaliações feitas offline até serem sincronizadas.
+- **Local** (`AsyncStorage`): sessão do usuário, cache de resultados de
+  busca já consultados no MusicBrainz, e rascunhos de avaliações feitas
+  offline até serem sincronizadas.
 - **Remoto** (Supabase / PostgreSQL): usuários, avaliações (`reviews`) e,
   futuramente, um cache de metadados de álbuns já buscados por qualquer
   usuário, para reduzir chamadas repetidas ao MusicBrainz.
@@ -155,24 +155,32 @@ O detalhamento do schema fica em `docs/arquitetura.md`.
 
 ## 12. Repositório Git
 
-Repositório Git inicializado localmente nesta etapa, contendo a estrutura de
-diretórios abaixo e o projeto Expo/TypeScript inicial (telas placeholder e
-navegação já funcionando, sem lógica de negócio ainda). Entrega marcada com
-a tag `etapa-01`.
+Repositório Git inicializado, contendo nesta etapa a documentação da
+proposta (`README.md` e `docs/`). Entrega marcada com a tag `etapa-01`.
+
+O código-fonte (projeto Expo/TypeScript, telas e navegação) ainda não foi
+adicionado ao repositório — esta etapa é de proposta e planejamento; o
+scaffold do projeto começa a ser construído a partir da próxima etapa, sobre
+a estrutura de diretórios planejada na seção 13.
 
 ## 13. Estrutura inicial de diretórios
+
+Estrutura de diretórios **planejada** para o projeto, a ser construída de
+forma incremental a partir da próxima etapa. Nesta etapa (Etapa 1), o
+repositório contém apenas `README.md` e `docs/`.
 
 ```
 Sleeve/
 ├── README.md
+├── docs/
+│   ├── proposta.md
+│   ├── arquitetura.md
+│   └── evidencias.md
 ├── app.json
 ├── package.json
 ├── tsconfig.json
 ├── babel.config.js
 ├── App.tsx
-├── docs/
-│   ├── proposta.md
-│   └── arquitetura.md
 ├── src/
 │   ├── screens/        (as 6 telas da proposta)
 │   ├── navigation/      (AppNavigator.tsx)
@@ -186,4 +194,6 @@ Sleeve/
 
 ## Histórico de mudanças
 
-- **Etapa 1**: proposta inicial criada.
+- **Etapa 1**: proposta inicial criada. Entrega desta etapa restrita a
+  `README.md` e `docs/` (proposta, arquitetura e evidências), conforme a
+  seção "Entrega" do enunciado da Etapa 1.

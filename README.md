@@ -14,58 +14,77 @@ diferença central: a avaliação nunca usa notas ou estrelas. Cada avaliação 
 binária — **gostei** ou **não gostei** — sempre acompanhada de uma crítica
 em texto escrita por quem avaliou.
 
-## Problema que a aplicação resolve
-
-Sistemas de avaliação por nota (0–5, 0–10) exigem "calibração" e geram
-comparações artificiais entre obras. Sleeve remove essa fricção: a decisão é
-simples (gostei ou não) e o espaço que sobra é usado para a crítica em si,
-que é o que realmente importa para quem lê.
-
 ## Tecnologias utilizadas
 
-- **Mobile**: React Native (Expo) + TypeScript, React Navigation.
-- **Backend**: Supabase (PostgreSQL + Auth).
-- **APIs externas**: MusicBrainz (metadados) e Cover Art Archive (capas).
-- **Persistência local**: AsyncStorage.
+- **Mobile**: React Native (Expo) + TypeScript, React Navigation
+  (native-stack + bottom-tabs).
+- **Backend**: Supabase (PostgreSQL + Auth) — previsto para uma etapa
+  futura; ainda não integrado.
+- **APIs externas**: MusicBrainz (metadados) e Cover Art Archive (capas) —
+  previstas para uma etapa futura; hoje a interface usa um catálogo mock.
+- **Persistência local**: AsyncStorage — prevista para uma etapa futura.
 
 Detalhes e justificativas técnicas completas em
-[`docs/proposta.md`](docs/proposta.md) e [`docs/arquitetura.md`](docs/arquitetura.md).
+[`docs/proposta.md`](docs/proposta.md), [`docs/arquitetura.md`](docs/arquitetura.md)
+e, para o que foi implementado nesta etapa, em [`docs/etapa-02.md`](docs/etapa-02.md).
 
 ## Instruções para execução
 
-Não aplicável nesta etapa. A Etapa 1 é de proposta e planejamento — ainda
-não há código-fonte no repositório. O scaffold do projeto (Expo +
-TypeScript) e as instruções de execução serão adicionados a partir da
-próxima etapa.
+Pré-requisitos: Node.js 18+ e o app **Expo Go** no celular (Android/iOS), ou
+um emulador Android / simulador iOS configurado.
+
+```bash
+npm install
+npx expo install --fix   # alinha as versões nativas com o SDK do Expo
+npm start                # ou: npx expo start
+```
+
+O Metro abre um QR code no terminal/navegador — escaneie com o Expo Go para
+rodar no celular, ou pressione `a`/`i` no terminal para abrir em um emulador
+Android ou simulador iOS. Também é possível rodar no navegador com `npm run web`.
 
 ## Instruções para teste
 
-Não aplicável nesta etapa, pelo mesmo motivo acima. Instruções de teste
-serão adicionadas quando houver código e a etapa de testes automatizados
-for implementada (ver roadmap em `docs/arquitetura.md`).
+Não há testes automatizados nesta etapa (não fazem parte do escopo da
+Etapa 2). A verificação é manual, navegando pelo fluxo: Login → Feed →
+Buscar → Detalhe do álbum → Nova avaliação → volta ao Detalhe já com a nova
+avaliação listada. A introdução de testes automatizados está prevista em
+uma etapa futura (ver roadmap em `docs/arquitetura.md`).
 
-## Funcionalidades implementadas
+## Funcionalidades implementadas (Etapa 2)
 
-Nenhuma ainda. Esta etapa entrega apenas a proposta e o planejamento do
-projeto (ver `docs/proposta.md`): nome, problema, público-alvo, telas
-previstas, fluxo de navegação, tecnologias escolhidas e estrutura de
-diretórios planejada.
+- Estrutura do projeto Expo + TypeScript, com navegação real entre as 6
+  telas previstas na proposta: Login/Cadastro, Feed, Buscar, Detalhe do
+  álbum, Nova avaliação e Perfil (pilha + abas, via React Navigation).
+- Avaliação binária gostei/não gostei com crítica em texto livre (tela Nova
+  avaliação), sem qualquer sistema de notas.
+- Busca com filtro por texto e por tipo (Álbum/EP) sobre um catálogo mock.
+- Perfil com estatísticas (avaliações, gostei, não gostei) e grade de
+  álbuns avaliados, filtrável por veredito.
+- Estado das avaliações compartilhado em memória (`ReviewsContext`) entre
+  todas as telas durante o uso do app — sem persistência entre execuções,
+  como previsto para esta etapa.
+- Componentes de interface reutilizáveis (botão, capa de álbum, badge de
+  veredito, alternador gostei/não gostei, campo de busca, item de lista) e
+  layout adaptável a diferentes tamanhos de tela — detalhes em
+  [`docs/etapa-02.md`](docs/etapa-02.md).
 
 ## Funcionalidades previstas (próximas etapas)
 
-- Estrutura do projeto (Expo + TypeScript) e navegação entre as 6 telas
-  previstas (Login, Home/Feed, Buscar, Detalhe do álbum, Nova avaliação,
-  Perfil).
-- Persistência local das avaliações.
-- Busca real de álbuns/EPs via MusicBrainz + Cover Art Archive.
+- Persistência local das avaliações (AsyncStorage).
+- Busca real de álbuns/EPs via MusicBrainz + Cover Art Archive (capas reais
+  no lugar do placeholder com a inicial do título).
 - Autenticação e sincronização com Supabase.
-- Feed social, recursos nativos, testes automatizados, otimização de
-  desempenho e build de publicação.
+- Feed social entre usuários reais, recursos nativos, testes automatizados,
+  otimização de desempenho e build de publicação.
 
 Roadmap completo em [`docs/arquitetura.md`](docs/arquitetura.md#evolução-por-etapa-roadmap).
 
-## Limitações conhecidas (Etapa 1)
+## Limitações conhecidas (Etapa 2)
 
-- Nenhum código-fonte ainda — o repositório contém apenas a documentação
-  desta etapa (README.md e docs/), o que é esperado, dado que esta é a
-  etapa de proposta e planejamento.
+- Sem persistência: os dados (avaliações) somem ao encerrar o app —
+  esperado, já que esta etapa não exige persistência nem comunicação com
+  servidor.
+- Catálogo de álbuns é mock (fixo no código), sem busca real via API.
+- Login não autentica de verdade; apenas navega para a área principal.
+- Sem testes automatizados ainda.

@@ -1,8 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CompositeNavigationProp, useNavigation, useScrollToTop } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchField } from '@/components/SearchField';
@@ -26,13 +26,36 @@ const FILTERS: readonly FilterOption[] = ['Todos', 'Álbum', 'EP'];
  * catálogo. A contagem de resultados é uma região "viva" — o leitor de tela
  * anuncia "3 resultados" sempre que ela muda, sem o usuário precisar
  * navegar até a lista para saber se a busca achou algo.
+ *
+ * Zona do polegar: o campo de busca fica no topo (zona da dor, difícil de
+ * alcançar com uma mão). Para o usuário não precisar esticar o dedo até
+ * lá, tocar na aba "Buscar" — que fica na zona natural, embaixo — já foca
+ * o campo e abre o teclado. Voltar do Detalhe para esta aba não reabre o
+ * teclado (só o toque na aba faz isso), para não atrapalhar a leitura dos
+ * resultados.
  */
 export function SearchScreen() {
   const navigation = useNavigation<SearchNavigation>();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterOption>('Todos');
   const listRef = useRef<FlatList<Album>>(null);
+  const inputRef = useRef<TextInput>(null);
   useScrollToTop(listRef);
+
+  useEffect(() => {
+    // Primeira visita: a aba é montada só depois do toque, então o
+    // listener abaixo ainda não existia — foca ao montar.
+    const first = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(first);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', () => {
+      // Espera a troca de aba terminar antes de focar.
+      setTimeout(() => inputRef.current?.focus(), 150);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -51,7 +74,7 @@ export function SearchScreen() {
   return (
     <ScreenContainer edges={['top']}>
       <ScreenHeader title="Buscar" variant="large" />
-      <SearchField value={query} onChangeText={setQuery} />
+      <SearchField ref={inputRef} value={query} onChangeText={setQuery} />
 
       <ChipGroup label="Filtrar por tipo" options={FILTERS} value={filter} onChange={setFilter} style={styles.filters} />
 

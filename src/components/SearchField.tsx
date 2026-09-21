@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, radius, spacing, touch, typography } from '@/theme/colors';
@@ -14,14 +14,22 @@ interface SearchFieldProps {
  * Campo de busca reutilizado na tela Buscar. Mostra estado de foco (borda
  * azul) e, quando há texto, um botão "Limpar busca" de 48dp — evita que o
  * usuário precise apagar caractere por caractere.
+ *
+ * Aceita `ref` para que a tela Buscar possa focar o campo sozinha quando o
+ * usuário toca na aba (ver SearchScreen) — o campo fica no topo, na zona
+ * difícil de alcançar com o polegar, então o app evita exigir esse toque.
  */
-export function SearchField({ value, onChangeText, placeholder }: SearchFieldProps) {
+export const SearchField = forwardRef<TextInput, SearchFieldProps>(function SearchField(
+  { value, onChangeText, placeholder },
+  ref,
+) {
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={[styles.wrapper, focused && styles.wrapperFocused]}>
       <Feather name="search" size={18} color={focused ? colors.accent : colors.textMuted} />
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder ?? 'Buscar álbum ou artista'}
@@ -47,7 +55,7 @@ export function SearchField({ value, onChangeText, placeholder }: SearchFieldPro
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

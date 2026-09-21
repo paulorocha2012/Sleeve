@@ -30,7 +30,10 @@ type PendingAction = Parameters<Props['navigation']['dispatch']>[0];
  * - "Fechar" (x), gesto de arrastar o modal ou botão Voltar do Android com
  *   um rascunho preenchido abrem um diálogo "Descartar avaliação?" — o
  *   usuário não perde texto por um toque acidental (`beforeRemove`);
- * - o botão "Publicar" fica fixo no rodapé e, enquanto está desabilitado,
+ * - "Publicar" e "Cancelar" ficam fixos no rodapé, na zona natural do
+ *   polegar — o × do cabeçalho continua existindo, mas não é o único jeito
+ *   de sair (ele fica no canto superior, a zona mais difícil de alcançar);
+ * - enquanto "Publicar" está desabilitado,
  *   uma linha logo acima diz exatamente o que falta preencher;
  * - ao publicar, volta ao Detalhe (que já lista a nova avaliação) e mostra
  *   a confirmação "Avaliação publicada".
@@ -140,13 +143,23 @@ export function NewReviewScreen({ route, navigation }: Props) {
               <Text style={styles.hint}>{missing}</Text>
             </View>
           )}
-          <PrimaryButton
-            label="Publicar avaliação"
-            icon="send"
-            onPress={handleSave}
-            disabled={!canSave}
-            accessibilityHint={missing ?? 'Publica e volta ao detalhe do álbum'}
-          />
+          <View style={styles.actions}>
+            <PrimaryButton
+              label="Cancelar"
+              variant="outline"
+              onPress={() => navigation.goBack()}
+              accessibilityHint="Volta ao detalhe do álbum sem publicar"
+              style={styles.cancel}
+            />
+            <PrimaryButton
+              label="Publicar"
+              icon="send"
+              onPress={handleSave}
+              disabled={!canSave}
+              accessibilityHint={missing ?? 'Publica a avaliação e volta ao detalhe do álbum'}
+              style={styles.publish}
+            />
+          </View>
         </View>
       </ScreenContainer>
 
@@ -227,6 +240,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.bg,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  // "Publicar" (ação principal) fica à direita e maior — do lado do polegar
+  // para quem é destro e com o dobro da largura do "Cancelar" (Lei de Fitts).
+  cancel: {
+    flex: 1,
+    width: undefined,
+  },
+  publish: {
+    flex: 2,
+    width: undefined,
   },
   hintRow: {
     flexDirection: 'row',

@@ -26,7 +26,9 @@ em texto escrita por quem avaliou.
 
 Detalhes e justificativas técnicas completas em
 [`docs/proposta.md`](docs/proposta.md), [`docs/arquitetura.md`](docs/arquitetura.md)
-e, para o que foi implementado nesta etapa, em [`docs/etapa-02.md`](docs/etapa-02.md).
+e, para o que foi implementado em cada etapa, em
+[`docs/etapa-02.md`](docs/etapa-02.md) (protótipo de interface) e
+[`docs/etapa-03.md`](docs/etapa-03.md) (navegação, UX e acessibilidade).
 
 ## Instruções para execução
 
@@ -41,17 +43,50 @@ npm start                # ou: npx expo start
 
 O Metro abre um QR code no terminal/navegador — escaneie com o Expo Go para
 rodar no celular, ou pressione `a`/`i` no terminal para abrir em um emulador
-Android ou simulador iOS. Também é possível rodar no navegador com `npm run web`.
+Android ou simulador iOS. Para rodar no navegador, instale uma vez o suporte
+web (`npx expo install react-dom react-native-web @expo/metro-runtime`) e use
+`npm run web`.
+
+Não há autenticação real ainda: no Login, qualquer e-mail válido + qualquer
+senha entra com o usuário de demonstração; "Criar conta" cria uma sessão
+com o nome informado (tudo em memória).
 
 ## Instruções para teste
 
-Não há testes automatizados nesta etapa (não fazem parte do escopo da
-Etapa 2). A verificação é manual, navegando pelo fluxo: Login → Feed →
-Buscar → Detalhe do álbum → Nova avaliação → volta ao Detalhe já com a nova
-avaliação listada. A introdução de testes automatizados está prevista em
-uma etapa futura (ver roadmap em `docs/arquitetura.md`).
+Ainda não há testes automatizados (previstos para uma etapa futura — ver
+roadmap em `docs/arquitetura.md`). A verificação é manual; o roteiro
+completo de teste da navegação, incluindo teste com TalkBack/VoiceOver,
+fonte grande e "Reduzir movimento", está em
+[`docs/etapa-03.md`](docs/etapa-03.md#8-instruções-para-execução-e-teste-da-navegação).
 
-## Funcionalidades implementadas (Etapa 2)
+Roteiro rápido: Login (teste a validação com campos vazios) → Criar conta →
+voltar → Entrar → Feed → Buscar → Detalhe do álbum → Nova avaliação →
+fechar com rascunho (confirmação) → publicar (aviso "Avaliação publicada")
+→ Perfil → toque numa capa → Configurações → Sair da conta.
+
+## Funcionalidades implementadas
+
+### Etapa 3 — navegação, UX e acessibilidade
+
+- Fluxo completo de navegação com autenticação: grupo sem sessão
+  (Login ⇄ **Criar conta**) e grupo com sessão (abas Feed/Buscar/Perfil,
+  Detalhe do álbum, Nova avaliação em modal e **Configurações**), com
+  **Sair da conta**. O Voltar do Android nunca leva a telas do outro grupo.
+- Todas as telas acessíveis e com retorno (seta/×, gesto e Voltar do
+  sistema); capas do Perfil levam ao Detalhe; estados vazios oferecem o
+  próximo passo.
+- Feedback visual: avisos ("Avaliação publicada", "Conta criada"…),
+  diálogos de confirmação (descartar avaliação, sair), estados de
+  pressionado, foco, erro, selecionado, desabilitado com motivo e
+  carregando.
+- Lei de Fitts: alvos de no mínimo 48dp, ação principal de 56dp em
+  largura total e fixa no rodapé, ação destrutiva isolada.
+- Acessibilidade: papéis, estados, rótulos e dicas para TalkBack/VoiceOver;
+  contraste WCAG AA revisado; texto mínimo de 12pt acompanhando a fonte do
+  sistema; informação nunca só por cor; respeito a "Reduzir movimento".
+- Detalhes em [`docs/etapa-03.md`](docs/etapa-03.md).
+
+### Etapa 2 — protótipo de interface
 
 - Estrutura do projeto Expo + TypeScript, com navegação real entre as 6
   telas previstas na proposta: Login/Cadastro, Feed, Buscar, Detalhe do
@@ -71,7 +106,7 @@ uma etapa futura (ver roadmap em `docs/arquitetura.md`).
 
 ## Funcionalidades previstas (próximas etapas)
 
-- Persistência local das avaliações (AsyncStorage).
+- Persistência local das avaliações e da sessão (AsyncStorage).
 - Busca real de álbuns/EPs via MusicBrainz + Cover Art Archive (capas reais
   no lugar do placeholder com a inicial do título).
 - Autenticação e sincronização com Supabase.
@@ -80,11 +115,11 @@ uma etapa futura (ver roadmap em `docs/arquitetura.md`).
 
 Roadmap completo em [`docs/arquitetura.md`](docs/arquitetura.md#evolução-por-etapa-roadmap).
 
-## Limitações conhecidas (Etapa 2)
+## Limitações conhecidas (Etapa 3)
 
-- Sem persistência: os dados (avaliações) somem ao encerrar o app —
-  esperado, já que esta etapa não exige persistência nem comunicação com
-  servidor.
+- Sem persistência: avaliações e sessão somem ao encerrar o app (fora do
+  escopo das etapas até aqui).
 - Catálogo de álbuns é mock (fixo no código), sem busca real via API.
-- Login não autentica de verdade; apenas navega para a área principal.
+- Login e cadastro não autenticam de verdade: a sessão é só em memória e
+  a senha não é verificada.
 - Sem testes automatizados ainda.

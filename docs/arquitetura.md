@@ -35,14 +35,18 @@
 - `screens/` — telas da aplicação (uma por arquivo), sem lógica de acesso a
   dados diretamente — apenas UI e chamadas para `state/`/`data/` (e, a
   partir de uma etapa futura, `services/`).
-- `navigation/` — configuração de navegação (stack raiz + tabs principais).
+- `navigation/` — configuração de navegação: stack raiz com fluxo de
+  autenticação (grupo sem sessão / com sessão) + tabs principais (Etapa 3).
 - `components/` — componentes de UI reutilizados por mais de uma tela
-  (botão, capa de álbum, badge de veredito, alternador gostei/não gostei,
-  campo de busca, item de lista, casca de tela).
-- `theme/` — tokens de cor/espaçamento/raio usados por todas as telas.
-- `state/` — estado compartilhado entre telas em memória (`ReviewsContext`,
-  Etapa 2). Passa a usar persistência local (AsyncStorage) numa etapa
-  futura.
+  (botão, botão de ícone, cabeçalho, chips, campo de texto, diálogo de
+  confirmação, estado vazio, capa de álbum, badge de veredito, alternador
+  gostei/não gostei, campo de busca, item de lista, casca de tela).
+- `feedback/` — canal global de feedback visual (avisos/"toast"), Etapa 3.
+- `theme/` — tokens de cor/espaçamento/raio/tipografia/alvo de toque
+  usados por todas as telas (contraste e tamanhos revisados na Etapa 3).
+- `state/` — estado compartilhado entre telas em memória: `ReviewsContext`
+  (Etapa 2) e `AuthContext` (sessão que dirige a navegação, Etapa 3). Passa
+  a usar persistência local (AsyncStorage) numa etapa futura.
 - `data/` — catálogo mock de álbuns usado enquanto não há integração real
   com a MusicBrainz/Cover Art Archive.
 - `services/` — comunicação externa (`musicbrainz.ts`, `supabase.ts`,
@@ -88,10 +92,10 @@ estritamente binário.
 |---|---|---|
 | 1 | Proposta e planejamento (sem código-fonte) | Análise de requisitos, arquitetura inicial |
 | 2 | Protótipo de interface: telas reais e navegáveis, componentes reutilizáveis, sem persistência nem backend | Interfaces, navegação, componentização, responsividade |
-| 3 | Persistência local (avaliações salvas no dispositivo, dados de álbum ainda mockados) | Persistência local, gerenciamento de estado |
-| 4 | Integração real com MusicBrainz + Cover Art Archive na busca | Comunicação com APIs, tratamento de erros, desempenho (cache/debounce) |
-| 5 | Autenticação com Supabase (cadastro/login/sessão) | Segurança, backend/serviços externos |
-| 6 | Avaliações sincronizadas com o Supabase (local + remoto) e feed social entre usuários reais | Arquitetura (camada de dados), persistência híbrida, consultas relacionais |
+| 3 | Navegação completa (fluxo de autenticação, cadastro, configurações), UX (Lei de Fitts, feedback visual) e acessibilidade (leitores de tela, contraste) | Navegação, usabilidade, acessibilidade |
+| 4 | Persistência local (avaliações e sessão salvas no dispositivo, dados de álbum ainda mockados) | Persistência local, gerenciamento de estado |
+| 5 | Integração real com MusicBrainz + Cover Art Archive na busca | Comunicação com APIs, tratamento de erros, desempenho (cache/debounce) |
+| 6 | Autenticação com Supabase + avaliações sincronizadas e feed social entre usuários reais | Segurança, backend/serviços externos, persistência híbrida |
 | 7 | Recursos nativos: compartilhar avaliação, notificações, foto de perfil | Recursos nativos do dispositivo, permissões |
 | 8 | Segurança (RLS, validação de entrada) e tratamento de erros em toda a app | Segurança, tratamento de erros |
 | 9 | Testes unitários e de componentes | Testes |
@@ -106,6 +110,14 @@ estritamente binário.
 > desta Etapa 2, empurrando persistência local para a Etapa 3. As demais
 > linhas foram renumeradas/compactadas para manter o roadmap dentro de 10
 > etapas + final.
+
+> **Nota (Etapa 3):** o enunciado oficial da Etapa 3 pediu navegação, UX
+> e acessibilidade — não persistência local. A linha 3 passou a refletir
+> isso, persistência local foi para a Etapa 4, e as antigas etapas 5
+> (autenticação) e 6 (sincronização/feed social) foram unidas na Etapa 6,
+> já que ambas dependem do Supabase. O restante do roadmap segue igual e
+> continuará sendo ajustado conforme os enunciados de cada etapa forem
+> divulgados.
 
 Mudanças de escopo, se necessárias, serão registradas nesta tabela e
 justificadas conforme exigido pelas regras da disciplina.

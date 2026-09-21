@@ -4,7 +4,7 @@
     "slug": "sleeve",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "backgroundColor": "#ffffff",
     "splash": {
       "backgroundColor": "#ffffff"

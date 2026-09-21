@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing } from '@/theme/colors';
+import { Feather } from '@expo/vector-icons';
+import { colors, radius, spacing, touch, typography } from '@/theme/colors';
 import { Album } from '@/types';
 import { AlbumCover } from './AlbumCover';
 
@@ -11,16 +12,27 @@ interface AlbumListItemProps {
   showType?: boolean;
 }
 
-/** Linha de lista reutilizada em Buscar e no Feed. */
+/**
+ * Linha de lista reutilizada em Buscar. A linha inteira é o alvo de toque
+ * (não só o título), com altura mínima de 72dp, fundo destacado ao
+ * pressionar e um chevron indicando que leva a outra tela. Para o leitor de
+ * tela, a linha é um único botão com rótulo completo.
+ */
 export function AlbumListItem({ album, onPress, showType }: AlbumListItemProps) {
   return (
-    <Pressable onPress={onPress} style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${album.title}, ${album.type} de ${album.artist}, ${album.year}`}
+      accessibilityHint="Abre o detalhe do álbum"
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
       <AlbumCover letter={album.cover} />
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={styles.title} numberOfLines={2} maxFontSizeMultiplier={typography.maxFontScale}>
           {album.title}
         </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={styles.subtitle} numberOfLines={1} maxFontSizeMultiplier={typography.maxFontScale}>
           {album.artist} · {album.year}
         </Text>
       </View>
@@ -29,6 +41,7 @@ export function AlbumListItem({ album, onPress, showType }: AlbumListItemProps) 
           <Text style={styles.typeText}>{album.type === 'Álbum' ? 'ÁLBUM' : 'EP'}</Text>
         </View>
       )}
+      <Feather name="chevron-right" size={20} color={colors.textMuted} />
     </Pressable>
   );
 }
@@ -38,33 +51,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    minHeight: touch.min + 24,
     paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+    marginHorizontal: -spacing.sm,
+    borderRadius: radius.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+  },
+  rowPressed: {
+    backgroundColor: colors.pressed,
   },
   info: {
     flex: 1,
     minWidth: 0,
   },
   title: {
-    fontSize: 14,
+    fontSize: typography.body,
     fontWeight: '700',
     color: colors.text,
   },
   subtitle: {
-    fontSize: 12.5,
+    fontSize: typography.small,
     color: colors.textMuted,
     marginTop: 2,
   },
   typeTag: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.pill,
     paddingVertical: 4,
     paddingHorizontal: 9,
   },
   typeText: {
-    fontSize: 10.5,
+    fontSize: typography.caption,
     fontWeight: '700',
     color: colors.textMuted,
   },

@@ -83,10 +83,10 @@ Login ─► Feed ─► (toca num cartão) ─► Detalhe do álbum ─► Aval
 | Login | `src/screens/LoginScreen.tsx` | Pilha (sem sessão) | Tela inicial; também após "Sair da conta" | "Entrar" (vai às abas) ou "Criar conta" |
 | Criar conta **(nova)** | `src/screens/SignUpScreen.tsx` | Pilha (sem sessão) | Link "Criar conta" no Login | "Criar conta" (vai às abas), "Já tenho conta", seta ← ou Voltar do sistema |
 | Feed | `src/screens/FeedScreen.tsx` | Aba 1 | Aba "Feed"; é a aba inicial após entrar | Tocar num cartão abre o Detalhe; estado vazio oferece "Buscar um álbum" |
-| Buscar | `src/screens/SearchScreen.tsx` | Aba 2 | Aba "Buscar"; botões "Buscar um álbum" dos estados vazios do Feed/Perfil | Tocar num resultado abre o Detalhe |
+| Buscar | `src/screens/SearchScreen.tsx` | Aba 2 | Aba "Buscar" (o toque na aba já foca o campo de busca); botões "Buscar um álbum" dos estados vazios do Feed/Perfil | Tocar num resultado abre o Detalhe |
 | Perfil | `src/screens/ProfileScreen.tsx` | Aba 3 | Aba "Perfil" | Tocar numa capa da grade abre o Detalhe **(novo)**; engrenagem abre Configurações **(novo)** |
 | Detalhe do álbum | `src/screens/AlbumDetailScreen.tsx` | Pilha sobre as abas | Cartão do Feed, resultado do Buscar ou capa do Perfil | "Avaliar este álbum" abre a Nova avaliação; seta ← volta para a tela de origem |
-| Nova avaliação | `src/screens/NewReviewScreen.tsx` | Modal | "Avaliar este álbum" / "Avaliar de novo" no Detalhe | "Publicar avaliação" (volta ao Detalhe com a avaliação listada) ou × (com confirmação se houver rascunho) |
+| Nova avaliação | `src/screens/NewReviewScreen.tsx` | Modal | "Avaliar este álbum" / "Avaliar de novo" no Detalhe | "Publicar" (volta ao Detalhe com a avaliação listada), "Cancelar" no rodapé ou × no cabeçalho (os dois com confirmação se houver rascunho) |
 | Configurações **(nova)** | `src/screens/SettingsScreen.tsx` | Pilha sobre as abas | Engrenagem no cabeçalho do Perfil | Seta ← volta ao Perfil; "Sair da conta" (com confirmação) volta ao Login |
 
 ## 3. Menus, abas e outros mecanismos de navegação
@@ -128,7 +128,7 @@ Login ─► Feed ─► (toca num cartão) ─► Detalhe do álbum ─► Aval
 | **Diálogo de confirmação** | `src/components/ConfirmDialog.tsx` | Fechar a Nova avaliação com rascunho ("Descartar avaliação?") e "Sair da conta?" |
 | **Estado pressionado** | Todos os `Pressable` (botões, cartões, linhas, chips, abas, ícones) | Fundo destacado/escurecido enquanto o dedo está no alvo |
 | **Estado de carregamento** | `PrimaryButton` (`loading`) | "Entrando…" / "Criando conta…" com spinner; bloqueia toque duplo |
-| **Estado desabilitado + motivo** | Botão "Publicar avaliação" | Botão esmaecido e, logo acima, uma linha dizendo o que falta ("Falta escolher: gostei ou não gostei.") |
+| **Estado desabilitado + motivo** | Botão "Publicar" da Nova avaliação | Botão esmaecido e, logo acima, uma linha dizendo o que falta ("Falta escolher: gostei ou não gostei.") |
 | **Estado de foco** em campos | `TextField`, `SearchField` | Borda azul de 2px e fundo branco no campo ativo |
 | **Estado de erro** em campos | `TextField` | Borda vermelha + ícone + mensagem explicando como corrigir |
 | **Estado selecionado** | `ChipGroup`, `LikeToggle`, abas | Preenchimento azul **+ ícone de check** (não só cor) |
@@ -159,8 +159,9 @@ tamanho do alvo. Aplicações no app:
 - **Ação principal com 56dp de altura e largura total**
   (`PrimaryButton`) — alvo grande e largo, fácil de acertar com o polegar.
 - **Ação principal fixa no rodapé** nas telas de Detalhe ("Avaliar este
-  álbum") e Nova avaliação ("Publicar avaliação"): fica na zona do
-  polegar e não muda de lugar quando o conteúdo rola.
+  álbum") e Nova avaliação ("Publicar", ao lado de "Cancelar"): fica na
+  zona natural do polegar e não muda de lugar quando o conteúdo rola (ver
+  "Zonas do polegar" abaixo).
 - **Linha/cartão inteiro como alvo** no Feed, Buscar e grade do Perfil (e
   não só o título), aumentando a área útil.
 - **Seletor gostei/não gostei** com dois alvos de metade da largura e
@@ -172,6 +173,54 @@ tamanho do alvo. Aplicações no app:
   a velocidade aqui.
 - **Nos diálogos**, os botões são empilhados em largura total, com a ação
   segura ("Continuar editando" / "Cancelar") embaixo, mais perto do polegar.
+
+### Zonas do polegar (zona natural, de alcance e da dor)
+
+A Lei de Fitts diz que alvos distantes custam mais para acertar. No
+celular, "distância" é principalmente a distância do **polegar**: segurando
+o aparelho com uma mão, a tela se divide em três zonas (modelo de Steven
+Hoober, usado também nas diretrizes de design mobile):
+
+```
+┌──────────────────────────┐
+│ ✖ ZONA DA DOR   ✖        │  topo, principalmente os cantos:
+│   (difícil de alcançar)  │  exige esticar o dedo ou usar a outra mão
+│ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
+│    ZONA DE ALCANCE       │  meio da tela: alcançável com
+│    (ok, com esforço)     │  algum esforço
+│ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
+│    ZONA NATURAL          │  parte de baixo e centro: o polegar
+│    (confortável)         │  alcança sem esforço
+└──────────────────────────┘
+```
+
+A regra aplicada no Sleeve foi: **ações frequentes e principais na zona
+natural; ações raras ou destrutivas podem (e às vezes devem) ficar na zona
+da dor**, porque ali é mais difícil tocá-las por acidente. Quando algo
+frequente precisou ficar no topo, há um caminho alternativo pela zona
+natural.
+
+| Tela | Zona natural (baixo) | Zona de alcance (meio) | Zona da dor (topo) e por que está lá |
+|---|---|---|---|
+| Todas as abas | Barra de abas Feed/Buscar/Perfil (64dp, 1/3 da largura cada) | — | — |
+| Login | "Entrar" e "Criar conta" | Campos de e-mail e senha | Nenhuma ação: só logotipo e título |
+| Criar conta | "Criar conta" e "Já tenho conta" (fim do formulário) | Campos | Seta ← (voltar). **Alternativas:** "Já tenho conta" no fim do formulário, gesto de voltar (iOS) e botão Voltar do Android |
+| Feed | Cartões (a tela inteira é tocável, e rola até o polegar) | Cartões | Só o título "Feed" |
+| Buscar | Resultados e a aba "Buscar" | Chips Todos/Álbum/EP | Campo de busca. **Alternativa:** tocar na aba "Buscar" (zona natural) já foca o campo e abre o teclado, então não é preciso alcançar o topo |
+| Detalhe do álbum | **"Avaliar este álbum", fixo no rodapé** | Resumo e avaliações | Seta ← (voltar). **Alternativas:** gesto de voltar (iOS) e botão Voltar do Android |
+| Nova avaliação | **"Publicar" e "Cancelar", fixos no rodapé** | Seletor gostei/não gostei (maior controle da tela), campo da crítica | × (fechar). **Alternativas:** "Cancelar" no rodapé, arrastar o modal para baixo, Voltar do Android |
+| Perfil | Grade de capas (tocável, rola) | Chips Gostei/Não gostei | **Engrenagem de Configurações — de propósito:** ação rara, não precisa estar à mão |
+| Configurações | — | Informações da conta e de acessibilidade | **"Sair da conta" é de propósito o alvo mais difícil do app:** fica atrás da engrenagem, isolado no fim da tela e pede confirmação. Sair por engano custaria mais que alguns segundos a mais para sair de propósito |
+| Diálogos | "Continuar editando" / "Cancelar" (ação segura, embaixo) | "Descartar" / "Sair" (ação destrutiva, acima) | — |
+
+No rodapé da Nova avaliação, "Publicar" fica **à direita** (lado do
+polegar para quem é destro, a maioria) e com o **dobro da largura** de
+"Cancelar": a ação que o usuário quer fazer é a mais fácil de acertar.
+
+**Mudanças feitas por causa dessa análise** (em relação à primeira versão
+da Etapa 3): o campo de busca passou a ser focado pelo toque na aba, e a
+Nova avaliação ganhou o botão "Cancelar" no rodapé, para que fechar a tela
+não dependa do × no canto superior.
 
 ### Outras decisões
 
@@ -321,14 +370,16 @@ use `npm run web`.
    Aperte Voltar do Android: o app **não** volta para o Login.
 4. **Abas** — alterne Feed/Buscar/Perfil. Role o Feed e toque de novo em
    "Feed": a lista volta ao topo.
-5. **Busca** — digite "xyz": aparece "0 resultados" e o estado vazio com
+5. **Busca** — toque na aba "Buscar": o campo já recebe o foco e o
+   teclado abre. Digite "xyz": aparece "0 resultados" e o estado vazio com
    "Limpar busca e filtros". Use os chips Todos/Álbum/EP.
 6. **Detalhe** — toque em um resultado (ou num cartão do Feed, ou numa capa
    do Perfil). Volte pela seta ou gesto: retorna exatamente à tela de
    origem.
 7. **Nova avaliação** — em "Avaliar este álbum", observe o botão
    "Publicar" desabilitado com a dica do que falta. Escreva algo e toque
-   em ×: aparece "Descartar avaliação?". Escolha "Continuar editando",
+   em "Cancelar" (rodapé) ou no × (cabeçalho): aparece "Descartar
+   avaliação?". Escolha "Continuar editando",
    selecione "Gostei" e publique: volta ao Detalhe com "Avaliação publicada"
    e o seu cartão destacado; o botão vira "Avaliar de novo".
 8. **Perfil e Configurações** — no Perfil, filtre por veredito e toque numa
@@ -348,8 +399,20 @@ use `npm run web`.
 - **Reduzir movimento**: ative no sistema e publique uma avaliação — o aviso
   aparece sem animação. A tela de Configurações mostra o estado atual.
 
+### Rodar no próprio celular
+
+Com o app **Expo Go** instalado (Play Store / App Store), rode `npm start`
+no computador e escaneie o QR code (no Android, pelo próprio Expo Go; no
+iOS, pela câmera). Celular e computador precisam estar na mesma rede
+Wi-Fi; se não estiverem (ou a rede bloquear), use `npx expo start --tunnel`.
+
 ### Evidências visuais
 
-Capturas do app em execução (bundle web real, viewport de celular
-390×844) em `docs/mockups/etapa-03/` — ver `docs/evidencias.md`. Elas
-complementam, e não substituem, o código-fonte.
+- **Vídeo** `docs/mockups/etapa-03/demo-navegacao.mp4`: percorre o roteiro
+  de teste inteiro (os círculos azuis mostram onde cada toque acontece).
+- **Capturas** do app em execução em `docs/mockups/etapa-03/` — ver
+  `docs/evidencias.md`.
+
+Ambos foram gerados a partir do bundle web real do app, numa janela do
+tamanho de um celular (390×844). Eles complementam, e não substituem, o
+código-fonte.

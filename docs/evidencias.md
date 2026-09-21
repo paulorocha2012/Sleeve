@@ -40,9 +40,16 @@ Evidência principal: código-fonte em `src/` (navegação em
 `SettingsScreen`, componentes de acessibilidade e feedback em
 `src/components/` e `src/feedback/`), descrito em `docs/etapa-03.md`.
 
-Capturas complementares em `docs/mockups/etapa-03/`, feitas a partir do
+Evidências complementares em `docs/mockups/etapa-03/`, feitas a partir do
 bundle web real do app (viewport de celular 390×844) percorrendo o
 roteiro de teste de `docs/etapa-03.md`:
+
+- **`demo-navegacao.mp4`** (~70s): vídeo do roteiro completo — validação
+  do login, cadastro, entrada, busca (com foco automático pela aba),
+  filtros, detalhe, nova avaliação (cancelar com rascunho → confirmação →
+  publicar), perfil, configurações e saída. Os círculos azuis marcam onde
+  cada toque acontece.
+- Capturas:
 
 | Arquivo | O que mostra |
 |---|---|
@@ -50,11 +57,12 @@ roteiro de teste de `docs/etapa-03.md`:
 | `08-cadastro-validacao.png` | Tela nova "Criar conta" com validação de cada campo |
 | `09-login-carregando.png` | Botão em estado de carregamento ("Entrando…") |
 | `10-feed-boas-vindas.png` | Feed após entrar, com aviso de feedback e barra de abas |
+| `11b-busca-foco-pela-aba.png` | Tocar na aba Buscar já foca o campo de busca (zona do polegar) |
 | `11-busca-sem-resultado.png` | Buscar sem resultado: contagem, estado vazio e "Limpar busca e filtros" |
 | `12-busca-filtro-ep.png` | Chips de filtro com estado selecionado (cor + check) |
 | `13-detalhe-rodape-fixo.png` | Detalhe do álbum com a ação principal fixa no rodapé |
-| `14-nova-avaliacao-dica.png` | "Publicar" desabilitado com a dica do que falta |
-| `15-descartar-confirmacao.png` | Diálogo "Descartar avaliação?" ao fechar com rascunho |
+| `14-nova-avaliacao-dica.png` | Rodapé com "Cancelar" e "Publicar" (desabilitado, com a dica do que falta) |
+| `15-descartar-confirmacao.png` | Diálogo "Descartar avaliação?" ao tocar em "Cancelar" com rascunho |
 | `16-nova-avaliacao-pronta.png` | Seletor gostei/não gostei selecionado, botão habilitado |
 | `17-avaliacao-publicada.png` | Volta ao Detalhe com o aviso e a própria avaliação destacada |
 | `18-perfil.png` | Perfil com engrenagem de Configurações e grade tocável |

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Review, Verdict } from '@/types';
+import { DEMO_USER_NAME, useAuth } from './AuthContext';
 
-const CURRENT_USER = 'Paulo R.';
+const CURRENT_USER = DEMO_USER_NAME;
 
 const initialReviews: Review[] = [
   {
@@ -37,6 +38,7 @@ const initialReviews: Review[] = [
 
 interface ReviewsContextValue {
   reviews: Review[];
+  /** Nome do usuário logado (vem do AuthContext). */
   currentUser: string;
   addReview: (albumId: string, verdict: Verdict, text: string) => void;
   reviewsForAlbum: (albumId: string) => Review[];
@@ -47,24 +49,30 @@ const ReviewsContext = createContext<ReviewsContextValue | undefined>(undefined)
 /**
  * Guarda as avaliações em memória (estado do React) para toda a árvore de
  * telas. Nesta etapa não há persistência local nem backend — os dados somem
- * ao fechar o app, como previsto no enunciado da Etapa 2.
+ * ao fechar o app (persistência local fica para uma etapa futura).
+ *
+ * Etapa 3: o autor das novas avaliações passa a ser o usuário da sessão
+ * (AuthContext), então quem cria uma conta nova vê o próprio perfil vazio
+ * e as avaliações que fizer aparecem com o seu nome.
  */
 export function ReviewsProvider({ children }: { children: React.ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const { user } = useAuth();
+  const currentUser = user?.name ?? CURRENT_USER;
 
   const value = useMemo<ReviewsContextValue>(
     () => ({
       reviews,
-      currentUser: CURRENT_USER,
+      currentUser,
       addReview: (albumId, verdict, text) => {
         setReviews((prev) => [
-          { id: `r${Date.now()}`, albumId, author: CURRENT_USER, verdict, text },
+          { id: `r${Date.now()}`, albumId, author: currentUser, verdict, text },
           ...prev,
         ]);
       },
       reviewsForAlbum: (albumId) => reviews.filter((r) => r.albumId === albumId),
     }),
-    [reviews],
+    [reviews, currentUser],
   );
 
   return <ReviewsContext.Provider value={value}>{children}</ReviewsContext.Provider>;

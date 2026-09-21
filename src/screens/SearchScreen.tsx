@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
+import React, { useMemo, useRef, useState } from 'react';
+import { CompositeNavigationProp, useNavigation, useScrollToTop } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchField } from '@/components/SearchField';
 import { AlbumListItem } from '@/components/AlbumListItem';
-import { colors, radius, spacing } from '@/theme/colors';
+import { ChipGroup } from '@/components/Chip';
+import { EmptyState } from '@/components/EmptyState';
+import { colors, spacing, typography } from '@/theme/colors';
 import { mockAlbums } from '@/data/mockAlbums';
-import { AlbumType, MainTabParamList, RootStackParamList } from '@/types';
+import { Album, AlbumType, MainTabParamList, RootStackParamList } from '@/types';
 
 type SearchNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Buscar'>,
@@ -16,13 +19,20 @@ type SearchNavigation = CompositeNavigationProp<
 >;
 
 type FilterOption = 'Todos' | AlbumType;
-const FILTERS: FilterOption[] = ['Todos', 'Álbum', 'EP'];
+const FILTERS: readonly FilterOption[] = ['Todos', 'Álbum', 'EP'];
 
-/** Tela "Buscar": filtro por texto e por tipo (álbum/EP) sobre o catálogo. */
+/**
+ * Tela "Buscar" (aba 2): filtro por texto e por tipo (álbum/EP) sobre o
+ * catálogo. A contagem de resultados é uma região "viva" — o leitor de tela
+ * anuncia "3 resultados" sempre que ela muda, sem o usuário precisar
+ * navegar até a lista para saber se a busca achou algo.
+ */
 export function SearchScreen() {
   const navigation = useNavigation<SearchNavigation>();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterOption>('Todos');
+  const listRef = useRef<FlatList<Album>>(null);
+  useScrollToTop(listRef);
 
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -36,27 +46,26 @@ export function SearchScreen() {
     });
   }, [query, filter]);
 
+  const hasFilters = query.length > 0 || filter !== 'Todos';
+
   return (
     <ScreenContainer edges={['top']}>
-      <Text style={styles.heading}>Buscar</Text>
+      <ScreenHeader title="Buscar" variant="large" />
       <SearchField value={query} onChangeText={setQuery} />
 
-      <View style={styles.filters}>
-        {FILTERS.map((option) => {
-          const active = option === filter;
-          return (
-            <Pressable key={option} onPress={() => setFilter(option)}>
-              <View style={[styles.filterChip, active && styles.filterChipActive]}>
-                <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>{option}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <ChipGroup label="Filtrar por tipo" options={FILTERS} value={filter} onChange={setFilter} style={styles.filters} />
+
+      <Text style={styles.count} accessibilityLiveRegion="polite" accessibilityRole="text">
+        {results.length === 1 ? '1 resultado' : `${results.length} resultados`}
+      </Text>
 
       <FlatList
+        ref={listRef}
         data={results}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <AlbumListItem
             album={item}
@@ -64,49 +73,39 @@ export function SearchScreen() {
             onPress={() => navigation.navigate('AlbumDetail', { albumId: item.id })}
           />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Nenhum resultado para essa busca.</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            icon="search"
+            title="Nada encontrado"
+            message={
+              query.trim()
+                ? `Nenhum ${filter === 'Todos' ? 'álbum ou EP' : filter.toLowerCase()} com “${query.trim()}”. Confira a grafia ou tente o nome do artista.`
+                : 'Nenhum item com esse filtro.'
+            }
+            actionLabel={hasFilters ? 'Limpar busca e filtros' : undefined}
+            onAction={() => {
+              setQuery('');
+              setFilter('Todos');
+            }}
+          />
+        }
       />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
   filters: {
-    flexDirection: 'row',
-    gap: spacing.sm,
     marginTop: spacing.md,
-    marginBottom: spacing.md,
   },
-  filterChip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-  },
-  filterChipActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  filterLabel: {
-    fontSize: 12.5,
+  count: {
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    fontSize: typography.small,
     fontWeight: '600',
     color: colors.textMuted,
   },
-  filterLabelActive: {
-    color: colors.onAccent,
-    fontWeight: '700',
-  },
-  empty: {
-    textAlign: 'center',
-    color: colors.textMuted,
-    marginTop: spacing.xxl,
+  list: {
+    paddingBottom: spacing.xxl,
   },
 });

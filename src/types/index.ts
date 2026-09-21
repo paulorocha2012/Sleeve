@@ -20,11 +20,23 @@ export interface Review {
   text: string;
 }
 
+export interface User {
+  name: string;
+  email: string;
+}
+
+/**
+ * Pilha raiz. Login/SignUp só existem na pilha enquanto não há sessão;
+ * Main/AlbumDetail/NewReview/Settings só existem com sessão ativa (fluxo de
+ * autenticação do React Navigation — ver src/navigation/RootNavigator.tsx).
+ */
 export type RootStackParamList = {
   Login: undefined;
+  SignUp: undefined;
   Main: undefined;
   AlbumDetail: { albumId: string };
   NewReview: { albumId: string };
+  Settings: undefined;
 };
 
 export type MainTabParamList = {

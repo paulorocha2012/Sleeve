@@ -28,18 +28,9 @@ const ICONS: Record<FeedbackType, React.ComponentProps<typeof Feather>['name']> 
 };
 
 /**
- * Canal único de feedback visual da aplicação ("toast"). Qualquer tela
- * chama `showFeedback('Avaliação publicada')` após uma ação e a mensagem
- * aparece por ~3s logo abaixo do cabeçalho — longe da barra de abas e dos
- * botões inferiores, e sem cobrir o Voltar/Fechar do cabeçalho, para não
- * esconder o próximo alvo de toque.
- *
- * Acessibilidade:
- * - a mensagem é anunciada pelo leitor de tela (`announceForAccessibility`
- *   no iOS/web e `accessibilityLiveRegion` no Android);
- * - cor + ícone + texto (não depende só de cor);
- * - respeita "Reduzir movimento": sem animação de deslize quando ativado;
- * - toque na mensagem a dispensa antes do tempo.
+ * Aviso curto ("toast") usado por todas as telas: `showFeedback('Avaliação
+ * publicada')`. Aparece por ~3s abaixo do cabeçalho, é anunciado pelo
+ * leitor de tela, não anima com "Reduzir movimento" e some ao ser tocado.
  */
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<FeedbackMessage | null>(null);

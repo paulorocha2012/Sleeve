@@ -10,14 +10,9 @@ interface LikeToggleProps {
 }
 
 /**
- * Componente central do app: substitui qualquer sistema de notas por um
- * único par de opções binárias (gostei / não gostei). Reutilizado na tela
- * de Nova avaliação.
- *
- * Etapa 3: as duas opções são alvos grandes (altura mínima de 88dp, metade
- * da largura cada — Lei de Fitts), expostas como `radiogroup`/`radio` para
- * o leitor de tela, e o estado selecionado é indicado por cor, borda e
- * ícone de check ao mesmo tempo (não depende só de cor).
+ * O par gostei / não gostei que substitui as notas. Dois alvos grandes
+ * (meia tela × 88dp), lidos como `radio` pelo leitor de tela; o selecionado
+ * muda cor, borda e ganha um check.
  */
 export function LikeToggle({ value, onChange }: LikeToggleProps) {
   return (

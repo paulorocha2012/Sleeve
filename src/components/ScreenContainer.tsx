@@ -11,11 +11,8 @@ interface ScreenContainerProps {
 }
 
 /**
- * Componente reutilizado por todas as telas: aplica a cor de fundo do tema,
- * respeita as áreas seguras (notch/status bar) e centraliza o conteúdo com
- * uma largura máxima em telas maiores (tablets/web), evitando que os
- * cartões e formulários fiquem esticados demais — é a principal estratégia
- * de adaptação a diferentes tamanhos de tela usada no app.
+ * Base de todas as telas: fundo do tema, áreas seguras (notch/status bar) e
+ * largura máxima em telas grandes, para o conteúdo não esticar demais.
  */
 export function ScreenContainer({ children, edges, noPadding }: ScreenContainerProps) {
   const { width } = useWindowDimensions();

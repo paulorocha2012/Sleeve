@@ -19,12 +19,9 @@ interface PrimaryButtonProps {
 }
 
 /**
- * Botão de ação principal. Ocupa a largura toda e tem 56dp de altura
- * (`touch.primary`): pela Lei de Fitts, alvos grandes e largos são mais
- * rápidos de acertar, especialmente com o polegar. Estados visuais:
- * normal, pressionado (escurece levemente), desabilitado (opacidade) e
- * carregando (spinner + texto). Os mesmos estados são expostos ao leitor
- * de tela via `accessibilityState`.
+ * Botão principal: largura toda, 56dp de altura (Lei de Fitts). Estados
+ * normal, pressionado, desabilitado e carregando, também informados ao
+ * leitor de tela via `accessibilityState`.
  */
 export function PrimaryButton({
   label,

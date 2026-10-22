@@ -18,15 +18,9 @@ interface Errors {
 }
 
 /**
- * Tela inicial do app (sem sessão). Ainda não há autenticação real
- * (Supabase fica para uma etapa futura): qualquer e-mail válido + senha
- * entra com o usuário de demonstração. O que esta etapa acrescenta é o
- * comportamento de UX do formulário:
- *
- * - validação com mensagens em linguagem simples, mostradas junto do campo;
- * - estado de carregamento no botão ("Entrando…") enquanto a "requisição" roda;
- * - teclado encadeado (Enter no e-mail vai para a senha; na senha, envia);
- * - "Criar conta" é um botão de verdade (48dp), que leva à tela de Cadastro.
+ * Login (sem sessão). Ainda sem autenticação real: qualquer e-mail válido +
+ * senha entra com o usuário de demonstração. Valida os campos, mostra
+ * "Entrando…" e encadeia o teclado (Enter no e-mail vai para a senha).
  */
 export function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();

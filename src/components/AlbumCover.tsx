@@ -15,13 +15,9 @@ interface AlbumCoverProps {
 }
 
 /**
- * Placeholder de capa (inicial do título) reutilizado em todas as listas e
- * na tela de detalhe. Numa etapa futura, com comunicação com servidor, esta
- * é a peça que passa a exibir a capa real vinda da Cover Art Archive.
- *
- * Acessibilidade: a capa é decorativa (o título do álbum sempre aparece em
- * texto ao lado), então fica escondida do leitor de tela para ele não
- * anunciar uma letra solta.
+ * Capa provisória (inicial do título). Vai mostrar a capa real quando a
+ * Cover Art Archive entrar. É decorativa, então fica escondida do leitor de
+ * tela (o título sempre aparece em texto ao lado).
  */
 export function AlbumCover({ letter, size = 52, style, fill = false }: AlbumCoverProps) {
   return (

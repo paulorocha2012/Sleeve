@@ -1,79 +1,91 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Review, Verdict } from '@/types';
+import React, { createContext, useContext, useMemo } from 'react';
+import { Draft, Review, Verdict } from '@/types';
+import { KEYS } from '@/storage/storage';
+import { usePersistentState } from '@/storage/usePersistentState';
+import { seedReviews } from '@/data/seed';
 import { DEMO_USER_NAME, useAuth } from './AuthContext';
-
-const CURRENT_USER = DEMO_USER_NAME;
-
-const initialReviews: Review[] = [
-  {
-    id: 'r1',
-    albumId: 'a1',
-    author: CURRENT_USER,
-    verdict: 'gostei',
-    text:
-      'Do início ao fim sem um momento fraco. A produção respira e deixa espaço pra voz contar a história — em especial a faixa 4, que resume o disco inteiro em três minutos.',
-  },
-  {
-    id: 'r2',
-    albumId: 'a3',
-    author: CURRENT_USER,
-    verdict: 'gostei',
-    text: 'Atmosférico e coerente, ótimo pra ouvir em sequência.',
-  },
-  {
-    id: 'r3',
-    albumId: 'a4',
-    author: CURRENT_USER,
-    verdict: 'nao_gostei',
-    text: 'Boas ideias soltas, mas não emenda como EP.',
-  },
-  {
-    id: 'r4',
-    albumId: 'a2',
-    author: 'Marina S.',
-    verdict: 'gostei',
-    text: 'EP curto mas certeiro, dá vontade de repetir na hora.',
-  },
-];
 
 interface ReviewsContextValue {
   reviews: Review[];
   /** Nome do usuário logado (vem do AuthContext). */
   currentUser: string;
+  ready: boolean;
   addReview: (albumId: string, verdict: Verdict, text: string) => void;
+  updateReview: (id: string, verdict: Verdict, text: string) => void;
+  deleteReview: (id: string) => void;
   reviewsForAlbum: (albumId: string) => Review[];
+  myReviewFor: (albumId: string) => Review | undefined;
+  draftFor: (albumId: string) => Draft | undefined;
+  saveDraft: (albumId: string, verdict: Verdict | null, text: string) => void;
+  discardDraft: (albumId: string) => void;
+  /** Apaga avaliações e rascunhos do usuário logado (Configurações). */
+  clearMine: () => void;
 }
 
 const ReviewsContext = createContext<ReviewsContextValue | undefined>(undefined);
 
 /**
- * Guarda as avaliações em memória (estado do React) para toda a árvore de
- * telas. Nesta etapa não há persistência local nem backend — os dados somem
- * ao fechar o app (persistência local fica para uma etapa futura).
- *
- * Etapa 3: o autor das novas avaliações passa a ser o usuário da sessão
- * (AuthContext), então quem cria uma conta nova vê o próprio perfil vazio
- * e as avaliações que fizer aparecem com o seu nome.
+ * Avaliações e rascunhos, salvos no aparelho (`sleeve:avaliacoes` e
+ * `sleeve:rascunhos`). As funções abaixo só trocam o estado por um array
+ * novo; quem grava no AsyncStorage é o `usePersistentState`.
  */
 export function ReviewsProvider({ children }: { children: React.ReactNode }) {
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [reviews, setReviews, reviewsReady] = usePersistentState<Review[]>(KEYS.reviews, seedReviews);
+  const [drafts, setDrafts, draftsReady] = usePersistentState<Draft[]>(KEYS.drafts, []);
   const { user } = useAuth();
-  const currentUser = user?.name ?? CURRENT_USER;
+  const currentUser = user?.name ?? DEMO_USER_NAME;
 
-  const value = useMemo<ReviewsContextValue>(
-    () => ({
+  const value = useMemo<ReviewsContextValue>(() => {
+    const isMyDraft = (d: Draft, albumId: string) => d.albumId === albumId && d.author === currentUser;
+
+    return {
       reviews,
       currentUser,
+      ready: reviewsReady && draftsReady,
+
+      // Criar
       addReview: (albumId, verdict, text) => {
-        setReviews((prev) => [
-          { id: `r${Date.now()}`, albumId, author: currentUser, verdict, text },
-          ...prev,
-        ]);
+        const review: Review = {
+          id: `r${Date.now()}`,
+          albumId,
+          author: currentUser,
+          verdict,
+          text,
+          createdAt: new Date().toISOString(),
+        };
+        setReviews((prev) => [review, ...prev]);
       },
+
+      // Atualizar
+      updateReview: (id, verdict, text) => {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, verdict, text, updatedAt: new Date().toISOString() } : r)),
+        );
+      },
+
+      // Remover
+      deleteReview: (id) => {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+      },
+
       reviewsForAlbum: (albumId) => reviews.filter((r) => r.albumId === albumId),
-    }),
-    [reviews, currentUser],
-  );
+      myReviewFor: (albumId) => reviews.find((r) => r.albumId === albumId && r.author === currentUser),
+
+      draftFor: (albumId) => drafts.find((d) => isMyDraft(d, albumId)),
+      saveDraft: (albumId, verdict, text) => {
+        const draft: Draft = { albumId, author: currentUser, verdict, text, updatedAt: new Date().toISOString() };
+        setDrafts((prev) => [draft, ...prev.filter((d) => !isMyDraft(d, albumId))]);
+      },
+      discardDraft: (albumId) => {
+        setDrafts((prev) => prev.filter((d) => !isMyDraft(d, albumId)));
+      },
+
+      clearMine: () => {
+        setReviews((prev) => prev.filter((r) => r.author !== currentUser));
+        setDrafts((prev) => prev.filter((d) => d.author !== currentUser));
+      },
+    };
+  }, [reviews, drafts, currentUser, reviewsReady, draftsReady, setReviews, setDrafts]);
 
   return <ReviewsContext.Provider value={value}>{children}</ReviewsContext.Provider>;
 }

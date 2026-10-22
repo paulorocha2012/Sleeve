@@ -1,11 +1,15 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
 import { User } from '@/types';
+import { KEYS } from '@/storage/storage';
+import { usePersistentState } from '@/storage/usePersistentState';
 
 /** Usuário de demonstração usado pelo login enquanto não há autenticação real (Supabase, etapa futura). */
 export const DEMO_USER_NAME = 'Paulo R.';
 
 interface AuthContextValue {
   user: User | null;
+  /** false enquanto a sessão salva ainda está sendo lida do aparelho. */
+  ready: boolean;
   signIn: (email: string) => Promise<User>;
   signUp: (name: string, email: string) => Promise<User>;
   signOut: () => void;
@@ -17,32 +21,33 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const fakeLatency = () => new Promise((resolve) => setTimeout(resolve, 700));
 
 /**
- * Sessão do usuário em memória. Serve para a navegação decidir quais telas
- * existem (Login/Cadastro vs. área logada) e para o botão "Sair" das
- * Configurações. Não há validação de senha nem persistência: a
- * autenticação real com Supabase está prevista para uma etapa futura (ver
- * docs/arquitetura.md).
+ * Sessão do usuário. Desde a Etapa 4 fica salva no aparelho (chave
+ * `sleeve:sessao`): quem fecha o app logado já abre direto nas abas.
+ * A senha continua sem verificação até a autenticação real (Supabase).
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser, ready] = usePersistentState<User | null>(KEYS.session, null);
 
   const signIn = useCallback(async (email: string) => {
     await fakeLatency();
     const next = { name: DEMO_USER_NAME, email: email.trim().toLowerCase() };
     setUser(next);
     return next;
-  }, []);
+  }, [setUser]);
 
   const signUp = useCallback(async (name: string, email: string) => {
     await fakeLatency();
     const next = { name: name.trim(), email: email.trim().toLowerCase() };
     setUser(next);
     return next;
-  }, []);
+  }, [setUser]);
 
-  const signOut = useCallback(() => setUser(null), []);
+  const signOut = useCallback(() => setUser(null), [setUser]);
 
-  const value = useMemo(() => ({ user, signIn, signUp, signOut }), [user, signIn, signUp, signOut]);
+  const value = useMemo(
+    () => ({ user, ready, signIn, signUp, signOut }),
+    [user, ready, signIn, signUp, signOut],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { AuthProvider } from '@/state/AuthContext';
 import { ReviewsProvider } from '@/state/ReviewsContext';
+import { DiaryProvider } from '@/state/DiaryContext';
 import { FeedbackProvider } from '@/feedback/FeedbackContext';
 
 export default function App() {
@@ -11,10 +12,12 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <ReviewsProvider>
-          <FeedbackProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </FeedbackProvider>
+          <DiaryProvider>
+            <FeedbackProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </FeedbackProvider>
+          </DiaryProvider>
         </ReviewsProvider>
       </AuthProvider>
     </SafeAreaProvider>

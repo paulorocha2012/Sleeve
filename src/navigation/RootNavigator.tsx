@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,6 +8,8 @@ import { Feather } from '@expo/vector-icons';
 import { colors, touch, typography } from '@/theme/colors';
 import { MainTabParamList, RootStackParamList } from '@/types';
 import { useAuth } from '@/state/AuthContext';
+import { useReviews } from '@/state/ReviewsContext';
+import { useDiary } from '@/state/DiaryContext';
 
 import { LoginScreen } from '@/screens/LoginScreen';
 import { SignUpScreen } from '@/screens/SignUpScreen';
@@ -46,14 +48,8 @@ const TABS: Record<keyof MainTabParamList, TabConfig> = {
 };
 
 /**
- * Abas principais: Feed, Buscar e Perfil.
- *
- * A barra de abas é o mecanismo de navegação primário porque fica na zona
- * do polegar (parte de baixo da tela) e está sempre visível — Lei de Fitts:
- * alvos grandes (terço da largura cada, 64dp de altura) e sempre no mesmo
- * lugar. Cada aba tem ícone + rótulo de texto (o ícone sozinho seria
- * ambíguo), a aba ativa muda de cor E ganha rótulo em negrito, e a barra
- * some com o teclado aberto para não roubar espaço dos formulários.
+ * Abas principais. A barra fica embaixo (zona do polegar), sempre visível,
+ * com ícone + texto, e some com o teclado aberto.
  */
 function MainTabs() {
   const insets = useSafeAreaInsets();
@@ -100,14 +96,25 @@ function MainTabs() {
  *   com sessão:  Main (abas) → Detalhe do álbum → Nova avaliação (modal)
  *                Main (aba Perfil) → Configurações
  *
- * As telas de cada grupo só existem na pilha enquanto a condição vale. Ao
- * entrar/criar conta o React Navigation troca o grupo sozinho (sem
- * `navigate`), e ao sair a pilha logada é descartada inteira — assim o botão
- * Voltar do Android nunca leva de volta ao Login depois de entrar, nem a uma
- * tela logada depois de sair.
+ * Cada grupo só existe enquanto a condição vale, então o Voltar do Android
+ * nunca cruza de um grupo para o outro.
+ *
+ * Enquanto os dados salvos no aparelho são lidos (alguns milissegundos),
+ * mostra só um indicador — senão a tela de Login piscaria antes de a
+ * sessão salva ser recuperada.
  */
 export function RootNavigator() {
-  const { user } = useAuth();
+  const { user, ready: authReady } = useAuth();
+  const { ready: reviewsReady } = useReviews();
+  const { ready: diaryReady } = useDiary();
+
+  if (!authReady || !reviewsReady || !diaryReady) {
+    return (
+      <View style={styles.loading} accessibilityLabel="Carregando seus dados">
+        <ActivityIndicator color={colors.accent} size="large" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer
@@ -136,3 +143,12 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg,
+  },
+});

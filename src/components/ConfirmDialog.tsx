@@ -13,17 +13,16 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Terceira opção, opcional (ex.: "Descartar rascunho"). Aparece entre as outras duas, em vermelho. */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }
 
 /**
- * Diálogo de confirmação usado antes de ações que perdem dados (descartar
- * uma avaliação em andamento, sair da conta). Implementado com `Modal` em
- * vez de `Alert.alert` para funcionar igual em Android, iOS e web.
- *
- * - `accessibilityViewIsModal` faz o VoiceOver ignorar o conteúdo por trás.
- * - Toque fora do cartão ou botão Voltar do Android = cancelar (ação segura).
- * - Os botões ficam empilhados em largura total; a ação segura ("Continuar
- *   editando") fica embaixo, mais perto do polegar, e a destrutiva em cima.
+ * Diálogo de confirmação antes de ações que perdem dados. Usa `Modal` (e
+ * não `Alert.alert`) para funcionar igual em Android, iOS e web. Tocar fora
+ * ou o Voltar do Android = cancelar. A ação segura fica embaixo, mais perto
+ * do polegar.
  */
 export function ConfirmDialog({
   visible,
@@ -34,6 +33,8 @@ export function ConfirmDialog({
   destructive,
   onConfirm,
   onCancel,
+  secondaryLabel,
+  onSecondary,
 }: ConfirmDialogProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -54,6 +55,9 @@ export function ConfirmDialog({
               onPress={onConfirm}
               variant={destructive ? 'danger' : 'solid'}
             />
+            {secondaryLabel && onSecondary && (
+              <PrimaryButton label={secondaryLabel} onPress={onSecondary} variant="danger" />
+            )}
             <PrimaryButton label={cancelLabel} onPress={onCancel} variant="outline" />
           </View>
         </Pressable>

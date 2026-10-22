@@ -14,94 +14,121 @@ import { EmptyState } from '@/components/EmptyState';
 import { colors, radius, spacing, typography } from '@/theme/colors';
 import { findAlbum } from '@/data/mockAlbums';
 import { useReviews } from '@/state/ReviewsContext';
-import { useFeedback } from '@/feedback/FeedbackContext';
+import { FeedbackType, useFeedback } from '@/feedback/FeedbackContext';
+import { formatDay } from '@/utils/date';
 import { RootStackParamList, Verdict } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NewReview'>;
 
 const MAX_LENGTH = 500;
+/** Espera entre a última tecla e a gravação do rascunho, para não gravar a cada letra. */
+const DRAFT_DELAY_MS = 400;
 
 type PendingAction = Parameters<Props['navigation']['dispatch']>[0];
 
-/** Como a tela vai fechar depois que o rascunho deixa de bloquear a saída. */
-type ExitRequest =
-  | { kind: 'published' }
-  | { kind: 'cancel'; action: PendingAction };
+/** Como a tela vai fechar depois que o bloqueio de saída é liberado. */
+interface ExitRequest {
+  action?: PendingAction;
+  message: string;
+  type?: FeedbackType;
+}
 
 /**
- * Tela "Nova avaliação" (modal sobre o Detalhe do álbum): veredito binário
- * + crítica em texto livre — sem notas.
+ * Modal de avaliação (veredito + crítica). Funciona em dois modos:
  *
- * Navegação e feedback desta etapa:
- * - "Fechar" (x), gesto de arrastar o modal ou botão Voltar do Android com
- *   um rascunho preenchido abrem um diálogo "Descartar avaliação?" — o
- *   usuário não perde texto por um toque acidental (`usePreventRemove`);
- * - "Publicar" e "Cancelar" ficam fixos no rodapé, na zona natural do
- *   polegar — o × do cabeçalho continua existindo, mas não é o único jeito
- *   de sair (ele fica no canto superior, a zona mais difícil de alcançar);
- * - enquanto "Publicar" está desabilitado,
- *   uma linha logo acima diz exatamente o que falta preencher;
- * - ao publicar, volta ao Detalhe (que já lista a nova avaliação) e mostra
- *   a confirmação "Avaliação publicada".
+ * - **Nova:** o texto vai sendo salvo como rascunho no aparelho. Se o app
+ *   fechar no meio, ao voltar o rascunho é recuperado. Publicar apaga o
+ *   rascunho.
+ * - **Edição** (`reviewId` na rota): abre com a avaliação já publicada e
+ *   "Salvar" atualiza ela. Não usa rascunho.
+ *
+ * Sair com algo preenchido (×, Cancelar, gesto ou Voltar do Android) abre um
+ * diálogo — `usePreventRemove` bloqueia a saída até a pessoa escolher.
  */
 export function NewReviewScreen({ route, navigation }: Props) {
-  const { albumId } = route.params;
+  const { albumId, reviewId } = route.params;
   const album = findAlbum(albumId);
-  const { addReview } = useReviews();
+  const { reviews, addReview, updateReview, draftFor, saveDraft, discardDraft } = useReviews();
   const { showFeedback } = useFeedback();
 
-  const [verdict, setVerdict] = useState<Verdict | null>(null);
-  const [text, setText] = useState('');
+  const original = reviewId ? reviews.find((r) => r.id === reviewId) : undefined;
+  const editing = original !== undefined;
+
+  // O rascunho só é lido na abertura da tela.
+  const [restored] = useState(() => (editing ? undefined : draftFor(albumId)));
+  const [verdict, setVerdict] = useState<Verdict | null>(original?.verdict ?? restored?.verdict ?? null);
+  const [text, setText] = useState(original?.text ?? restored?.text ?? '');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [exit, setExit] = useState<ExitRequest | null>(null);
 
-  const hasDraft = verdict !== null || text.trim().length > 0;
-  const canSave = verdict !== null && text.trim().length > 0;
+  const trimmed = text.trim();
+  const hasContent = verdict !== null || trimmed.length > 0;
+  const changed = editing && (verdict !== original.verdict || trimmed !== original.text);
+  const canSave = verdict !== null && trimmed.length > 0 && (!editing || changed);
 
   const missing =
-    verdict === null && text.trim().length === 0
+    verdict === null && trimmed.length === 0
       ? 'Escolha gostei ou não gostei e escreva sua crítica.'
       : verdict === null
         ? 'Falta escolher: gostei ou não gostei.'
-        : text.trim().length === 0
+        : trimmed.length === 0
           ? 'Falta escrever sua crítica.'
-          : null;
+          : editing && !changed
+            ? 'Nada mudou ainda.'
+            : null;
 
-  // Bloqueia qualquer forma de sair da tela (botão, gesto, Voltar do Android)
-  // enquanto houver rascunho não publicado. Usa `usePreventRemove` (e não um
-  // listener `beforeRemove` solto) porque só assim o native-stack também
-  // bloqueia o gesto de arrastar o modal no iOS: com o listener, o iOS fecha
-  // o modal nativamente, o JS recusa remover a rota e a tela fica travada
-  // ("removed natively but didn't get removed from JS state").
-  usePreventRemove(hasDraft && exit === null, ({ data }) => {
+  // Rascunho: grava um pouco depois da última alteração. Se a pessoa apagar
+  // tudo, o rascunho salvo também é removido.
+  useEffect(() => {
+    if (editing || exit) return;
+    const timer = setTimeout(() => {
+      if (hasContent) saveDraft(albumId, verdict, text);
+      else if (draftFor(albumId)) discardDraft(albumId);
+    }, DRAFT_DELAY_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verdict, text, editing, exit]);
+
+  // Bloqueia qualquer forma de sair enquanto houver algo a perder. Usa
+  // `usePreventRemove` (e não o evento `beforeRemove`) porque só ele também
+  // segura o gesto de arrastar o modal no iOS.
+  usePreventRemove((editing ? changed : hasContent) && exit === null, ({ data }) => {
     setPendingAction(data.action);
   });
 
-  // Sai da tela só depois que o bloqueio foi liberado (state já aplicado).
+  // Sai só depois que o bloqueio foi liberado (estado `exit` já aplicado).
   useEffect(() => {
     if (!exit) return;
-    if (exit.kind === 'published') {
-      navigation.goBack();
-      showFeedback('Avaliação publicada');
-    } else {
-      navigation.dispatch(exit.action);
-      showFeedback('Avaliação descartada', 'info');
-    }
+    if (exit.action) navigation.dispatch(exit.action);
+    else navigation.goBack();
+    showFeedback(exit.message, exit.type);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exit]);
 
   function handleSave() {
     if (!verdict || !album || !canSave) return;
-    addReview(album.id, verdict, text.trim());
-    setExit({ kind: 'published' });
+    if (editing) {
+      updateReview(original.id, verdict, trimmed);
+      setExit({ message: 'Avaliação atualizada' });
+    } else {
+      addReview(album.id, verdict, trimmed);
+      discardDraft(album.id);
+      setExit({ message: 'Avaliação publicada' });
+    }
   }
 
-  const close = { icon: 'x' as const, accessibilityLabel: 'Fechar', accessibilityHint: 'Volta ao detalhe do álbum', onPress: () => navigation.goBack() };
+  const title = editing ? 'Editar avaliação' : 'Nova avaliação';
+  const close = {
+    icon: 'x' as const,
+    accessibilityLabel: 'Fechar',
+    accessibilityHint: 'Volta ao detalhe do álbum',
+    onPress: () => navigation.goBack(),
+  };
 
   if (!album) {
     return (
       <ScreenContainer edges={['top']}>
-        <ScreenHeader title="Nova avaliação" left={close} />
+        <ScreenHeader title={title} left={close} />
         <EmptyState
           icon="alert-circle"
           title="Álbum não encontrado"
@@ -114,11 +141,16 @@ export function NewReviewScreen({ route, navigation }: Props) {
   }
 
   const remaining = MAX_LENGTH - text.length;
+  const note = editing
+    ? `Publicada em ${formatDay(original.createdAt)}${original.updatedAt ? `, editada em ${formatDay(original.updatedAt)}` : ''}.`
+    : restored
+      ? `Rascunho de ${formatDay(restored.updatedAt)} recuperado.`
+      : null;
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScreenContainer edges={['top', 'bottom']}>
-        <ScreenHeader title="Nova avaliação" left={close} />
+        <ScreenHeader title={title} left={close} />
 
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.albumRow} accessible accessibilityLabel={`Avaliando ${album.title}, de ${album.artist}`}>
@@ -128,6 +160,8 @@ export function NewReviewScreen({ route, navigation }: Props) {
               <Text style={styles.albumSubtitle}>{album.artist}</Text>
             </View>
           </View>
+
+          {note && <Text style={styles.note}>{note}</Text>}
 
           <Text style={styles.sectionLabel} accessibilityRole="header">
             Sua avaliação
@@ -164,35 +198,59 @@ export function NewReviewScreen({ route, navigation }: Props) {
               label="Cancelar"
               variant="outline"
               onPress={() => navigation.goBack()}
-              accessibilityHint="Volta ao detalhe do álbum sem publicar"
+              accessibilityHint="Volta ao detalhe do álbum"
               style={styles.cancel}
             />
             <PrimaryButton
-              label="Publicar"
-              icon="send"
+              label={editing ? 'Salvar' : 'Publicar'}
+              icon={editing ? 'check' : 'send'}
               onPress={handleSave}
               disabled={!canSave}
-              accessibilityHint={missing ?? 'Publica a avaliação e volta ao detalhe do álbum'}
+              accessibilityHint={missing ?? (editing ? 'Salva as alterações' : 'Publica a avaliação')}
               style={styles.publish}
             />
           </View>
         </View>
       </ScreenContainer>
 
-      <ConfirmDialog
-        visible={pendingAction !== null}
-        title="Descartar avaliação?"
-        message="Você começou a avaliar este álbum. Se sair agora, o que escreveu será perdido."
-        confirmLabel="Descartar"
-        cancelLabel="Continuar editando"
-        destructive
-        onCancel={() => setPendingAction(null)}
-        onConfirm={() => {
-          const action = pendingAction;
-          setPendingAction(null);
-          if (action) setExit({ kind: 'cancel', action });
-        }}
-      />
+      {editing ? (
+        <ConfirmDialog
+          visible={pendingAction !== null}
+          title="Descartar alterações?"
+          message="A avaliação publicada continua como estava."
+          confirmLabel="Descartar alterações"
+          cancelLabel="Continuar editando"
+          destructive
+          onCancel={() => setPendingAction(null)}
+          onConfirm={() => {
+            const action = pendingAction ?? undefined;
+            setPendingAction(null);
+            setExit({ action, message: 'Alterações descartadas', type: 'info' });
+          }}
+        />
+      ) : (
+        <ConfirmDialog
+          visible={pendingAction !== null}
+          title="Sair da avaliação?"
+          message="Você pode guardar o que escreveu como rascunho e terminar depois, mesmo que feche o app."
+          confirmLabel="Guardar rascunho"
+          secondaryLabel="Descartar"
+          cancelLabel="Continuar editando"
+          onCancel={() => setPendingAction(null)}
+          onConfirm={() => {
+            const action = pendingAction ?? undefined;
+            setPendingAction(null);
+            saveDraft(albumId, verdict, text);
+            setExit({ action, message: 'Rascunho guardado', type: 'info' });
+          }}
+          onSecondary={() => {
+            const action = pendingAction ?? undefined;
+            setPendingAction(null);
+            discardDraft(albumId);
+            setExit({ action, message: 'Avaliação descartada', type: 'info' });
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -213,7 +271,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   albumInfo: {
     flex: 1,
@@ -228,10 +286,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
+  note: {
+    fontSize: typography.small,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
   sectionLabel: {
     fontSize: typography.small,
     fontWeight: '700',
     color: colors.text,
+    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   textBlock: {
@@ -259,8 +323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  // "Publicar" (ação principal) fica à direita e maior — do lado do polegar
-  // para quem é destro e com o dobro da largura do "Cancelar" (Lei de Fitts).
+  // A ação principal fica à direita e com o dobro da largura (Lei de Fitts).
   cancel: {
     flex: 1,
     width: undefined,

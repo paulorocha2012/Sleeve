@@ -8,46 +8,71 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { AlbumCover } from '@/components/AlbumCover';
 import { ChipGroup } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
+import { ProfileSummary } from '@/components/ProfileSummary';
 import { colors, radius, spacing, typography } from '@/theme/colors';
 import { useReviews } from '@/state/ReviewsContext';
 import { useAuth } from '@/state/AuthContext';
+import { useDiary } from '@/state/DiaryContext';
 import { findAlbum } from '@/data/mockAlbums';
-import { MainTabParamList, RootStackParamList, Verdict } from '@/types';
+import { Album, MainTabParamList, RootStackParamList } from '@/types';
 
 type ProfileNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Perfil'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-type FilterOption = 'Gostei' | 'Não gostei';
-const FILTERS: readonly FilterOption[] = ['Gostei', 'Não gostei'];
+type FilterOption = 'Gostei' | 'Não gostei' | 'Quero ouvir';
+const FILTERS: readonly FilterOption[] = ['Gostei', 'Não gostei', 'Quero ouvir'];
+
+interface GridItem {
+  key: string;
+  /** Sem álbum = espaço vazio que completa a última linha da grade. */
+  album?: Album;
+  /** Rótulo do leitor de tela. */
+  description: string;
+}
 
 /**
- * Tela "Perfil" (aba 3): estatísticas do usuário e grade das avaliações
- * feitas, filtráveis por veredito. Novidades da Etapa 3 na navegação:
- * - cada capa da grade é tocável e abre o Detalhe do álbum;
- * - a engrenagem no canto superior direito abre Configurações (onde fica o
- *   "Sair da conta", longe das ações frequentes).
+ * Perfil (aba 3): números do usuário, resumo visual e uma grade de capas
+ * filtrada por "Gostei", "Não gostei" ou "Quero ouvir". Cada capa abre o
+ * Detalhe do álbum; a engrenagem abre Configurações.
  */
 export function ProfileScreen() {
   const navigation = useNavigation<ProfileNavigation>();
   const { reviews, currentUser } = useReviews();
   const { user } = useAuth();
+  const { myListens, myWantList } = useDiary();
   const { width } = useWindowDimensions();
   const [filter, setFilter] = useState<FilterOption>('Gostei');
 
   const myReviews = useMemo(() => reviews.filter((r) => r.author === currentUser), [reviews, currentUser]);
-  const likedCount = myReviews.filter((r) => r.verdict === 'gostei').length;
-  const dislikedCount = myReviews.length - likedCount;
 
-  const wantedVerdict: Verdict = filter === 'Gostei' ? 'gostei' : 'nao_gostei';
-  const filtered = useMemo(
-    () => myReviews.filter((r) => r.verdict === wantedVerdict),
-    [myReviews, wantedVerdict],
-  );
+  const gridItems = useMemo<GridItem[]>(() => {
+    if (filter === 'Quero ouvir') {
+      return myWantList.flatMap((w) => {
+        const album = findAlbum(w.albumId);
+        return album ? [{ key: `w-${w.albumId}`, album, description: 'Na sua lista Quero ouvir.' }] : [];
+      });
+    }
+    const verdict = filter === 'Gostei' ? 'gostei' : 'nao_gostei';
+    return myReviews
+      .filter((r) => r.verdict === verdict)
+      .flatMap((r) => {
+        const album = findAlbum(r.albumId);
+        const description = verdict === 'gostei' ? 'Você gostou.' : 'Você não gostou.';
+        return album ? [{ key: r.id, album, description }] : [];
+      });
+  }, [filter, myReviews, myWantList]);
 
   // Grade responsiva: mais colunas conforme a largura disponível da tela.
   const numColumns = width >= 900 ? 5 : width >= 600 ? 4 : 3;
+  // Completa a última linha com espaços vazios, senão uma capa sozinha
+  // esticaria até ocupar a largura toda.
+  const fillers = (numColumns - (gridItems.length % numColumns)) % numColumns;
+  const gridData: GridItem[] =
+    gridItems.length === 0
+      ? []
+      : [...gridItems, ...Array.from({ length: fillers }, (_, i) => ({ key: `vazio-${i}`, description: '' }))];
   const initials = currentUser
     .split(' ')
     .filter(Boolean)
@@ -60,9 +85,9 @@ export function ProfileScreen() {
     <ScreenContainer edges={['top']}>
       <FlatList
         key={numColumns}
-        data={filtered}
+        data={gridData}
         numColumns={numColumns}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.key}
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.grid}
         ListHeaderComponent={
@@ -89,55 +114,64 @@ export function ProfileScreen() {
             <View
               style={styles.stats}
               accessible
-              accessibilityLabel={`${myReviews.length} avaliações: ${likedCount} gostei, ${dislikedCount} não gostei`}
+              accessibilityLabel={`${myReviews.length} avaliações, ${myListens.length} escutas, ${myWantList.length} álbuns em Quero ouvir`}
             >
               <Stat value={myReviews.length} label="avaliações" />
-              <Stat value={likedCount} label="gostei" accent />
-              <Stat value={dislikedCount} label="não gostei" />
+              <Stat value={myListens.length} label="escutas" accent />
+              <Stat value={myWantList.length} label="quero ouvir" />
             </View>
 
+            <ProfileSummary reviews={myReviews} listens={myListens} />
+
             <ChipGroup
-              label="Filtrar suas avaliações por veredito"
+              label="Filtrar seus álbuns"
               options={FILTERS}
               value={filter}
               onChange={setFilter}
-              stretch
               style={styles.filters}
             />
           </View>
         }
         renderItem={({ item }) => {
-          const album = findAlbum(item.albumId);
-          if (!album) return null;
+          const album = item.album;
+          if (!album) return <View style={styles.gridItem} importantForAccessibility="no" />;
           return (
-            <Pressable
-              onPress={() => navigation.navigate('AlbumDetail', { albumId: album.id })}
-              accessibilityRole="button"
-              accessibilityLabel={`${album.title}, de ${album.artist}. Você ${
-                item.verdict === 'gostei' ? 'gostou' : 'não gostou'
-              }.`}
-              accessibilityHint="Abre o detalhe do álbum"
-              style={({ pressed }) => [styles.gridItem, pressed && styles.gridItemPressed]}
-            >
-              <AlbumCover letter={album.cover} size={40} fill style={styles.gridCover} />
-              <Text style={styles.gridTitle} numberOfLines={1}>
-                {album.title}
-              </Text>
-            </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('AlbumDetail', { albumId: album.id })}
+            accessibilityRole="button"
+            accessibilityLabel={`${album.title}, de ${album.artist}. ${item.description}`}
+            accessibilityHint="Abre o detalhe do álbum"
+            style={({ pressed }) => [styles.gridItem, pressed && styles.gridItemPressed]}
+          >
+            <AlbumCover letter={album.cover} size={40} fill style={styles.gridCover} />
+            <Text style={styles.gridTitle} numberOfLines={1}>
+              {album.title}
+            </Text>
+          </Pressable>
           );
         }}
         ListEmptyComponent={
-          <EmptyState
-            icon={filter === 'Gostei' ? 'thumbs-up' : 'thumbs-down'}
-            title={myReviews.length === 0 ? 'Você ainda não avaliou nada' : `Nada em “${filter}”`}
-            message={
-              myReviews.length === 0
-                ? 'Busque um álbum e diga se gostou ou não — ele aparece aqui.'
-                : `Você não marcou nenhum álbum como “${filter.toLowerCase()}” ainda.`
-            }
-            actionLabel={myReviews.length === 0 ? 'Buscar um álbum' : undefined}
-            onAction={() => navigation.navigate('Buscar')}
-          />
+          filter === 'Quero ouvir' ? (
+            <EmptyState
+              icon="bookmark"
+              title="Sua lista está vazia"
+              message="No detalhe de um álbum, toque em “Quero ouvir” para guardar ele aqui."
+              actionLabel="Buscar um álbum"
+              onAction={() => navigation.navigate('Buscar')}
+            />
+          ) : (
+            <EmptyState
+              icon={filter === 'Gostei' ? 'thumbs-up' : 'thumbs-down'}
+              title={myReviews.length === 0 ? 'Você ainda não avaliou nada' : `Nada em “${filter}”`}
+              message={
+                myReviews.length === 0
+                  ? 'Busque um álbum e diga se gostou ou não — ele aparece aqui.'
+                  : `Você não marcou nenhum álbum como “${filter.toLowerCase()}” ainda.`
+              }
+              actionLabel={myReviews.length === 0 ? 'Buscar um álbum' : undefined}
+              onAction={() => navigation.navigate('Buscar')}
+            />
+          )
         }
       />
     </ScreenContainer>

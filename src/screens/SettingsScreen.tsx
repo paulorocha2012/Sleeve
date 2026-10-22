@@ -8,25 +8,26 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { colors, radius, spacing, typography } from '@/theme/colors';
 import { useAuth } from '@/state/AuthContext';
+import { useReviews } from '@/state/ReviewsContext';
+import { useDiary } from '@/state/DiaryContext';
 import { useFeedback } from '@/feedback/FeedbackContext';
 import { RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 /**
- * Tela "Configurações" (nova na Etapa 3), acessada pela engrenagem do
- * Perfil. Reúne:
- * - dados da conta;
- * - um painel que mostra, ao vivo, se o leitor de tela e o "Reduzir
- *   movimento" do sistema estão ativos (o app se adapta a eles — ex.: o
- *   aviso de feedback não desliza quando "Reduzir movimento" está ligado);
- * - "Sair da conta", isolado no fim da tela e com confirmação: ação
- *   destrutiva longe das ações frequentes, para não ser tocada por engano.
+ * Configurações (engrenagem do Perfil): conta, estado da acessibilidade do
+ * sistema, o que está salvo no aparelho e, no fim, as ações destrutivas
+ * ("Apagar meus dados" e "Sair da conta"), sempre com confirmação.
  */
 export function SettingsScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
+  const { reviews, currentUser, clearMine: clearReviews } = useReviews();
+  const { myListens, myWantList, clearMine: clearDiary } = useDiary();
   const { showFeedback } = useFeedback();
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const [clearVisible, setClearVisible] = useState(false);
+  const myReviewCount = reviews.filter((r) => r.author === currentUser).length;
   const [screenReader, setScreenReader] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -73,7 +74,28 @@ export function SettingsScreen({ navigation }: Props) {
           fonte e redução de movimento). Para alterá-las, use os ajustes do sistema.
         </Text>
 
+        <Text style={styles.section} accessibilityRole="header">
+          Salvo neste aparelho
+        </Text>
+        <View style={styles.card}>
+          <Row icon="message-square" label="Avaliações" value={String(myReviewCount)} />
+          <View style={styles.divider} />
+          <Row icon="headphones" label="Escutas" value={String(myListens.length)} />
+          <View style={styles.divider} />
+          <Row icon="bookmark" label="Quero ouvir" value={String(myWantList.length)} />
+        </View>
+        <Text style={styles.note}>
+          Seus dados ficam guardados no celular e continuam aqui quando você fecha o app ou sai da conta.
+        </Text>
+
         <View style={styles.danger}>
+          <PrimaryButton
+            label="Apagar meus dados"
+            icon="trash-2"
+            variant="danger"
+            accessibilityHint="Pede confirmação antes de apagar"
+            onPress={() => setClearVisible(true)}
+          />
           <PrimaryButton
             label="Sair da conta"
             icon="log-out"
@@ -87,7 +109,7 @@ export function SettingsScreen({ navigation }: Props) {
       <ConfirmDialog
         visible={confirmVisible}
         title="Sair da conta?"
-        message="Você volta para a tela de login. As avaliações desta sessão não são salvas no aparelho ainda."
+        message="Você volta para a tela de login. Suas avaliações e escutas continuam salvas no aparelho."
         confirmLabel="Sair"
         cancelLabel="Cancelar"
         destructive
@@ -96,6 +118,22 @@ export function SettingsScreen({ navigation }: Props) {
           setConfirmVisible(false);
           signOut();
           showFeedback('Você saiu da conta', 'info');
+        }}
+      />
+
+      <ConfirmDialog
+        visible={clearVisible}
+        title="Apagar seus dados?"
+        message="Avaliações, rascunhos, escutas e a lista Quero ouvir desta conta serão apagados do aparelho. Não dá para desfazer."
+        confirmLabel="Apagar tudo"
+        cancelLabel="Cancelar"
+        destructive
+        onCancel={() => setClearVisible(false)}
+        onConfirm={() => {
+          setClearVisible(false);
+          clearReviews();
+          clearDiary();
+          showFeedback('Seus dados foram apagados', 'info');
         }}
       />
     </ScreenContainer>
@@ -163,5 +201,6 @@ const styles = StyleSheet.create({
   },
   danger: {
     marginTop: spacing.xxl + spacing.lg,
+    gap: spacing.sm,
   },
 });

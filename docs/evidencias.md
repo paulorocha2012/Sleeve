@@ -68,3 +68,28 @@ roteiro de teste de `docs/etapa-03.md`:
 | `18-perfil.png` | Perfil com engrenagem de Configurações e grade tocável |
 | `19-configuracoes.png` | Tela nova "Configurações" (conta, acessibilidade, sair) |
 | `20-sair-confirmacao.png` | Confirmação antes de sair da conta |
+
+## Etapa 4 — Persistência local
+
+Evidência principal: código em `src/storage/` (acesso ao AsyncStorage e o
+hook `usePersistentState`), nos contexts de `src/state/` (operações de
+criar, atualizar e remover) e nas telas descritas em `docs/etapa-04.md`.
+
+Capturas complementares em `docs/mockups/etapa-04/`, tiradas do bundle web
+do app (390×844). Os dados ficam no `localStorage` do navegador, e a
+captura 04 foi tirada depois de recarregar a página.
+
+| Arquivo | O que mostra |
+|---|---|
+| `01-detalhe-historia.png` | Detalhe com "Ouvi hoje", "Quero ouvir" e a linha do tempo do álbum |
+| `02-ouvi-hoje.png` | Escuta registrada: nova linha no topo da linha do tempo |
+| `03-sair-com-rascunho.png` | Sair de uma avaliação começada: guardar rascunho, descartar ou continuar |
+| `04-rascunho-recuperado-apos-reabrir.png` | Depois de recarregar, o rascunho volta preenchido |
+| `05-editar-avaliacao.png` | Modo edição da avaliação já publicada |
+| `06-apagar-avaliacao.png` | Confirmação antes de apagar a própria avaliação |
+| `07-perfil-resumo.png` | Perfil com contadores, barra gostei × não gostei e escutas por mês |
+| `08-perfil-quero-ouvir.png` | Grade filtrada pela lista "Quero ouvir" |
+| `09-configuracoes-dados-salvos.png` | O que está salvo no aparelho e "Apagar meus dados" |
+
+Observação: na captura 09, "Leitor de tela: Ativado" é como o navegador
+automatizado usado nas capturas se apresenta, não uma configuração do app.

@@ -44,18 +44,26 @@
 - `feedback/` — canal global de feedback visual (avisos/"toast"), Etapa 3.
 - `theme/` — tokens de cor/espaçamento/raio/tipografia/alvo de toque
   usados por todas as telas (contraste e tamanhos revisados na Etapa 3).
-- `state/` — estado compartilhado entre telas em memória: `ReviewsContext`
-  (Etapa 2) e `AuthContext` (sessão que dirige a navegação, Etapa 3). Passa
-  a usar persistência local (AsyncStorage) numa etapa futura.
+- `state/` — estado compartilhado entre telas: `AuthContext` (sessão),
+  `ReviewsContext` (avaliações e rascunhos) e `DiaryContext` (escutas e
+  "Quero ouvir"). Desde a Etapa 4 todos salvam no aparelho.
+- `storage/` — acesso ao AsyncStorage (`storage.ts`) e o hook
+  `usePersistentState`, usado pelos contexts no lugar de `useState`
+  (Etapa 4).
+- `utils/` — funções auxiliares (formatação de datas).
 - `data/` — catálogo mock de álbuns usado enquanto não há integração real
-  com a MusicBrainz/Cover Art Archive.
-- `services/` — comunicação externa (`musicbrainz.ts`, `supabase.ts`,
-  persistência local): ainda não implementado, previsto para as próximas
-  etapas conforme o roadmap abaixo.
+  com a MusicBrainz/Cover Art Archive, e dados de exemplo da primeira
+  abertura (`seed.ts`).
+- `services/` — comunicação externa (`musicbrainz.ts`, `supabase.ts`):
+  ainda não implementado, previsto para as próximas etapas.
 - `types/` — tipos TypeScript do domínio (`Album`, `Review`, tipos de
   navegação).
 
 ## Modelo de dados (previsto)
+
+Modelo do banco no Supabase (Etapa 6). O que já é salvo localmente no
+aparelho desde a Etapa 4 está descrito em
+[`etapa-04.md`](etapa-04.md#3-estrutura-dos-dados-armazenados).
 
 **users** (gerenciado pelo Supabase Auth + tabela `profiles`)
 - id (uuid, pk)
@@ -118,6 +126,12 @@ estritamente binário.
 > já que ambas dependem do Supabase. O restante do roadmap segue igual e
 > continuará sendo ajustado conforme os enunciados de cada etapa forem
 > divulgados.
+
+> **Nota (Etapa 4):** além da persistência pedida no enunciado, a etapa
+> incluiu escutas, lista "Quero ouvir", edição/remoção de avaliações e
+> rascunho, em resposta à avaliação oral da Etapa 3 (pouca interação
+> além de avaliar). Todos são dados persistidos, ou seja, continuam dentro
+> do tema da etapa. Detalhes em `docs/etapa-04.md`.
 
 Mudanças de escopo, se necessárias, serão registradas nesta tabela e
 justificadas conforme exigido pelas regras da disciplina.

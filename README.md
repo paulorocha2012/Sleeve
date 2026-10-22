@@ -22,13 +22,17 @@ em texto escrita por quem avaliou.
   futura; ainda não integrado.
 - **APIs externas**: MusicBrainz (metadados) e Cover Art Archive (capas) —
   previstas para uma etapa futura; hoje a interface usa um catálogo mock.
-- **Persistência local**: AsyncStorage — prevista para uma etapa futura.
+- **Persistência local**: AsyncStorage (Etapa 4) — sessão, avaliações,
+  rascunhos, escutas e lista "Quero ouvir" ficam salvos no aparelho.
 
 Detalhes e justificativas técnicas completas em
 [`docs/proposta.md`](docs/proposta.md), [`docs/arquitetura.md`](docs/arquitetura.md)
 e, para o que foi implementado em cada etapa, em
-[`docs/etapa-02.md`](docs/etapa-02.md) (protótipo de interface) e
-[`docs/etapa-03.md`](docs/etapa-03.md) (navegação, UX e acessibilidade).
+[`docs/etapa-02.md`](docs/etapa-02.md) (protótipo de interface),
+[`docs/etapa-03.md`](docs/etapa-03.md) (navegação, UX e acessibilidade) e
+[`docs/etapa-04.md`](docs/etapa-04.md) (persistência local). O mapa do
+código (pastas, caminho dos dados, onde mexer) está em
+[`docs/estrutura.md`](docs/estrutura.md).
 
 ## Instruções para execução
 
@@ -49,7 +53,8 @@ web (`npx expo install react-dom react-native-web @expo/metro-runtime`) e use
 
 Não há autenticação real ainda: no Login, qualquer e-mail válido + qualquer
 senha entra com o usuário de demonstração; "Criar conta" cria uma sessão
-com o nome informado (tudo em memória).
+com o nome informado. A sessão e os dados ficam salvos no aparelho: ao
+fechar e abrir o app, ele volta logado e com tudo como estava.
 
 ## Instruções para teste
 
@@ -59,12 +64,30 @@ completo de teste da navegação, incluindo teste com TalkBack/VoiceOver,
 fonte grande e "Reduzir movimento", está em
 [`docs/etapa-03.md`](docs/etapa-03.md#8-instruções-para-execução-e-teste-da-navegação).
 
-Roteiro rápido: Login (teste a validação com campos vazios) → Criar conta →
+Persistência (Etapa 4): roteiro em
+[`docs/etapa-04.md`](docs/etapa-04.md#6-instruções-para-execução-e-teste),
+incluindo como verificar os dados depois de fechar e reabrir o app.
+
+Roteiro rápido da navegação: Login (teste a validação com campos vazios) → Criar conta →
 voltar → Entrar → Feed → Buscar → Detalhe do álbum → Nova avaliação →
 fechar com rascunho (confirmação) → publicar (aviso "Avaliação publicada")
 → Perfil → toque numa capa → Configurações → Sair da conta.
 
 ## Funcionalidades implementadas
+
+### Etapa 4 — persistência local
+
+- Dados salvos no aparelho com AsyncStorage e recuperados ao reabrir o
+  app: sessão (abre logado), avaliações, rascunhos, escutas e "Quero
+  ouvir", separados por usuário.
+- Avaliação agora pode ser editada e apagada; rascunho de avaliação é
+  salvo enquanto se digita e recuperado depois.
+- Detalhe do álbum: "Ouvi hoje", "Quero ouvir" e a linha do tempo "Sua
+  história com o álbum" (escutas, avaliação, edição).
+- Perfil: contadores de avaliações/escutas/lista, barra gostei × não
+  gostei, gráfico de escutas por mês e filtro "Quero ouvir".
+- Configurações: o que está salvo no aparelho e "Apagar meus dados".
+- Detalhes em [`docs/etapa-04.md`](docs/etapa-04.md).
 
 ### Etapa 3 — navegação, UX e acessibilidade
 
@@ -106,7 +129,6 @@ fechar com rascunho (confirmação) → publicar (aviso "Avaliação publicada")
 
 ## Funcionalidades previstas (próximas etapas)
 
-- Persistência local das avaliações e da sessão (AsyncStorage).
 - Busca real de álbuns/EPs via MusicBrainz + Cover Art Archive (capas reais
   no lugar do placeholder com a inicial do título).
 - Autenticação e sincronização com Supabase.
@@ -115,11 +137,11 @@ fechar com rascunho (confirmação) → publicar (aviso "Avaliação publicada")
 
 Roadmap completo em [`docs/arquitetura.md`](docs/arquitetura.md#evolução-por-etapa-roadmap).
 
-## Limitações conhecidas (Etapa 3)
+## Limitações conhecidas (Etapa 4)
 
-- Sem persistência: avaliações e sessão somem ao encerrar o app (fora do
-  escopo das etapas até aqui).
+- Dados só no aparelho: trocar de celular ou desinstalar o app perde tudo
+  (sincronização prevista com o Supabase).
 - Catálogo de álbuns é mock (fixo no código), sem busca real via API.
-- Login e cadastro não autenticam de verdade: a sessão é só em memória e
-  a senha não é verificada.
+- Login e cadastro não autenticam de verdade: a senha não é verificada e o
+  usuário é identificado pelo nome.
 - Sem testes automatizados ainda.

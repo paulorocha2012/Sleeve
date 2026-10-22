@@ -40,7 +40,9 @@ export function SearchScreen() {
   const [filter, setFilter] = useState<FilterOption>('Todos');
   const listRef = useRef<FlatList<Album>>(null);
   const inputRef = useRef<TextInput>(null);
-  useScrollToTop(listRef);
+  // Cast necessário: no React 19, useRef(null) vira RefObject<T | null>,
+  // mas o tipo do useScrollToTop (React Navigation 6) espera RefObject<T>.
+  useScrollToTop(listRef as React.RefObject<FlatList<Album>>);
 
   useEffect(() => {
     // Primeira visita: a aba é montada só depois do toque, então o

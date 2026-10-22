@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { UNSTABLE_usePreventRemove as usePreventRemove } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -22,6 +23,11 @@ const MAX_LENGTH = 500;
 
 type PendingAction = Parameters<Props['navigation']['dispatch']>[0];
 
+/** Como a tela vai fechar depois que o rascunho deixa de bloquear a saída. */
+type ExitRequest =
+  | { kind: 'published' }
+  | { kind: 'cancel'; action: PendingAction };
+
 /**
  * Tela "Nova avaliação" (modal sobre o Detalhe do álbum): veredito binário
  * + crítica em texto livre — sem notas.
@@ -29,7 +35,7 @@ type PendingAction = Parameters<Props['navigation']['dispatch']>[0];
  * Navegação e feedback desta etapa:
  * - "Fechar" (x), gesto de arrastar o modal ou botão Voltar do Android com
  *   um rascunho preenchido abrem um diálogo "Descartar avaliação?" — o
- *   usuário não perde texto por um toque acidental (`beforeRemove`);
+ *   usuário não perde texto por um toque acidental (`usePreventRemove`);
  * - "Publicar" e "Cancelar" ficam fixos no rodapé, na zona natural do
  *   polegar — o × do cabeçalho continua existindo, mas não é o único jeito
  *   de sair (ele fica no canto superior, a zona mais difícil de alcançar);
@@ -47,7 +53,7 @@ export function NewReviewScreen({ route, navigation }: Props) {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [text, setText] = useState('');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
-  const saved = useRef(false);
+  const [exit, setExit] = useState<ExitRequest | null>(null);
 
   const hasDraft = verdict !== null || text.trim().length > 0;
   const canSave = verdict !== null && text.trim().length > 0;
@@ -61,23 +67,33 @@ export function NewReviewScreen({ route, navigation }: Props) {
           ? 'Falta escrever sua crítica.'
           : null;
 
-  // Intercepta qualquer forma de sair da tela (botão, gesto, Voltar do Android)
-  // enquanto houver rascunho não publicado.
+  // Bloqueia qualquer forma de sair da tela (botão, gesto, Voltar do Android)
+  // enquanto houver rascunho não publicado. Usa `usePreventRemove` (e não um
+  // listener `beforeRemove` solto) porque só assim o native-stack também
+  // bloqueia o gesto de arrastar o modal no iOS: com o listener, o iOS fecha
+  // o modal nativamente, o JS recusa remover a rota e a tela fica travada
+  // ("removed natively but didn't get removed from JS state").
+  usePreventRemove(hasDraft && exit === null, ({ data }) => {
+    setPendingAction(data.action);
+  });
+
+  // Sai da tela só depois que o bloqueio foi liberado (state já aplicado).
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (saved.current || !hasDraft) return;
-      e.preventDefault();
-      setPendingAction(e.data.action);
-    });
-    return unsubscribe;
-  }, [navigation, hasDraft]);
+    if (!exit) return;
+    if (exit.kind === 'published') {
+      navigation.goBack();
+      showFeedback('Avaliação publicada');
+    } else {
+      navigation.dispatch(exit.action);
+      showFeedback('Avaliação descartada', 'info');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exit]);
 
   function handleSave() {
     if (!verdict || !album || !canSave) return;
     addReview(album.id, verdict, text.trim());
-    saved.current = true;
-    navigation.goBack();
-    showFeedback('Avaliação publicada');
+    setExit({ kind: 'published' });
   }
 
   const close = { icon: 'x' as const, accessibilityLabel: 'Fechar', accessibilityHint: 'Volta ao detalhe do álbum', onPress: () => navigation.goBack() };
@@ -174,9 +190,7 @@ export function NewReviewScreen({ route, navigation }: Props) {
         onConfirm={() => {
           const action = pendingAction;
           setPendingAction(null);
-          saved.current = true;
-          if (action) navigation.dispatch(action);
-          showFeedback('Avaliação descartada', 'info');
+          if (action) setExit({ kind: 'cancel', action });
         }}
       />
     </KeyboardAvoidingView>

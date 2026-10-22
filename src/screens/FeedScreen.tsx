@@ -27,7 +27,9 @@ export function FeedScreen() {
   const navigation = useNavigation<FeedNavigation>();
   const { reviews, currentUser } = useReviews();
   const listRef = useRef<FlatList<Review>>(null);
-  useScrollToTop(listRef);
+  // Cast necessário: no React 19, useRef(null) vira RefObject<T | null>,
+  // mas o tipo do useScrollToTop (React Navigation 6) espera RefObject<T>.
+  useScrollToTop(listRef as React.RefObject<FlatList<Review>>);
 
   return (
     <ScreenContainer noPadding edges={['top']}>
